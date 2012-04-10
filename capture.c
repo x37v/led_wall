@@ -59,7 +59,7 @@ static int xioctl(int fd, int request, void * arg){
    return r;
 }
 
-static void process_image(const void *p) {
+static void process_image(struct buffer * b) {
    fputc ('.', stdout);
    fflush (stdout);
 }
@@ -85,7 +85,7 @@ static int read_frame(void) {
             }
          }
 
-         process_image (buffers[0].start);
+         process_image(buffers);
 
          break;
 
@@ -112,7 +112,7 @@ static int read_frame(void) {
 
          assert (buf.index < n_buffers);
 
-         process_image (buffers[buf.index].start);
+         process_image(buffers + buf.index);
 
          if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
             errno_exit ("VIDIOC_QBUF");
@@ -120,6 +120,8 @@ static int read_frame(void) {
          break;
 
       case IO_METHOD_USERPTR:
+#if 0
+#error "IO_METHOD_USERPTR not supported"
          CLEAR (buf);
 
          buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -147,10 +149,11 @@ static int read_frame(void) {
 
          assert (i < n_buffers);
 
-         process_image ((void *) buf.m.userptr);
+         process_image((void *)buf.m.userptr);
 
          if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
             errno_exit ("VIDIOC_QBUF");
+#endif
 
          break;
    }
