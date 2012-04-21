@@ -44,6 +44,8 @@ static int fd              = -1;
 struct buffer *buffers         = NULL;
 static unsigned int n_buffers       = 0;
 
+static int bytesperline = 0;
+
 static void errno_exit(const char *s) {
    fprintf (stderr, "%s error %d, %s\n", s, errno, strerror (errno));
 
@@ -60,8 +62,30 @@ static int xioctl(int fd, int request, void * arg){
 }
 
 static void process_image(struct buffer * b) {
-   fputc ('.', stdout);
-   fflush (stdout);
+   //struct v4l2_buffer * vbuff = (struct v4l2_buffer *)b;
+   //printf("%d\n", vbuff->field);
+
+   //printf("%d\n", (int)b->length);
+   //fputc ('.', stdout);
+   //fflush (stdout);
+   //
+   
+  unsigned char *y = b->start;
+
+  int width = 640;
+  int height = 480;
+
+  printf("P2\n%d %d\n255\n", width, height);
+  int row, col;
+  for (row=0; row<height; row++) {
+    for (col=0; col<width; col++) {
+      int intensity = *(y + col + (row*width));
+      //int intensity = *(y + col);
+      printf("%d ", intensity);
+    }
+    printf("\n");
+    //y += bytesperline;
+  }
 }
 
 static int read_frame(void) {
@@ -490,7 +514,8 @@ static void init_device                     (void) {
    fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
    fmt.fmt.pix.width       = 640; 
    fmt.fmt.pix.height      = 480;
-   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+   //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
    fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
    if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
@@ -505,6 +530,12 @@ static void init_device                     (void) {
    min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
    if (fmt.fmt.pix.sizeimage < min)
       fmt.fmt.pix.sizeimage = min;
+
+   bytesperline = fmt.fmt.pix.bytesperline;
+   //printf("size %d x %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
+   //printf("bytes per line %d\n", fmt.fmt.pix.bytesperline);
+   //printf("sizeimage %d\n", fmt.fmt.pix.sizeimage);
+   //exit(0);
 
    switch (io) {
       case IO_METHOD_READ:
@@ -578,6 +609,8 @@ long_options [] = {
 
 int main (int argc, char ** argv) {
    dev_name = "/dev/video";
+
+   //printf("%ld\n", sizeof(struct v4l2_buffer));
 
    for (;;) {
       int index;
