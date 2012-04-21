@@ -45,6 +45,8 @@ struct buffer *buffers         = NULL;
 static unsigned int n_buffers       = 0;
 
 static int bytesperline = 0;
+static int width = 720;
+static int height = 480;
 
 static void errno_exit(const char *s) {
    fprintf (stderr, "%s error %d, %s\n", s, errno, strerror (errno));
@@ -72,14 +74,11 @@ static void process_image(struct buffer * b) {
    
   unsigned char *y = b->start;
 
-  int width = 640;
-  int height = 480;
-
   printf("P2\n%d %d\n255\n", width, height);
   int row, col;
   for (row=0; row<height; row++) {
     for (col=0; col<width; col++) {
-      int intensity = *(y + col + (row*width));
+      int intensity = *(y + 2 * col + (2 * row*width));
       //int intensity = *(y + col);
       printf("%d ", intensity);
     }
@@ -512,10 +511,10 @@ static void init_device                     (void) {
    CLEAR (fmt);
 
    fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-   fmt.fmt.pix.width       = 640; 
-   fmt.fmt.pix.height      = 480;
-   //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+   fmt.fmt.pix.width       = width; 
+   fmt.fmt.pix.height      = height;
+   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+   //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
    fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
    if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
@@ -531,7 +530,10 @@ static void init_device                     (void) {
    if (fmt.fmt.pix.sizeimage < min)
       fmt.fmt.pix.sizeimage = min;
 
+   width = fmt.fmt.pix.width;
+   height = fmt.fmt.pix.height;
    bytesperline = fmt.fmt.pix.bytesperline;
+
    //printf("size %d x %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
    //printf("bytes per line %d\n", fmt.fmt.pix.bytesperline);
    //printf("sizeimage %d\n", fmt.fmt.pix.sizeimage);
