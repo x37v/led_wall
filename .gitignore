@@ -2,3 +2,10 @@
 capture
 *.pgm
 other/
+*.slo
+*.lo
+*.o
+*.so
+*.lai
+*.la
+*.a
