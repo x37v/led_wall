@@ -17,7 +17,7 @@ using std::endl;
 
 uint8_t led[NUM_LEDS][3];
 
-uint8_t invert_byte(uint8_t b) {
+uint8_t reverse_bits(uint8_t b) {
    return
       (b & (0x1 << 0)) << 7 | 
       (b & (0x1 << 1)) << 5 | 
@@ -46,7 +46,7 @@ void draw(std::ofstream& out) {
       for (unsigned int c = 0; c < 3; c++) {
          uint8_t local[8];
          for (int j = 0; j < 8; j++)
-            local[j] = invert_byte(led[i + j * NUM_LEDS_DIV8][c]);
+            local[j] = reverse_bits(0x80 | led[i + j * NUM_LEDS_DIV8][c]);
 
          for (unsigned int bit = 0; bit < 8; bit++) {
             packet[packet_byte] = 0;
@@ -69,26 +69,35 @@ int main(int argc, char * argv[]) {
    std::ofstream serial(argv[1], std::ios_base::binary);
 
    //init
-   for (int i = 0; i < NUM_LEDS; i++) {
-      led[i][0] = 0x80 | 0;
-      led[i][1] = 0x80 | 0;
-      led[i][2] = 0x80 | 127;
-   }
 
    if (!serial.is_open()) {
       cout << "cannot open serial" << endl;
       exit(-1);
    }
 
-   write_latch(serial, NUM_LEDS);
-   serial.flush();
+   int i = 0;
+   int j = 0;
+   while(1) {
+      memset(led, 0, NUM_LEDS * 3);
 
-   usleep(1000);
-   draw(serial);
+      led[i][j] = 127;
 
-   usleep(10000);
-   write_latch(serial, NUM_LEDS);
-   serial.flush();
+      write_latch(serial, NUM_LEDS);
+      serial.flush();
+
+      usleep(1000);
+      draw(serial);
+
+      usleep(10000);
+      write_latch(serial, NUM_LEDS);
+      serial.flush();
+
+      i += 1;
+      if (i >= NUM_LEDS) {
+         i = 0;
+         j = (j + 1) % 3;
+      }
+   }
 
 
    serial.close();
