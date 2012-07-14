@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <inttypes.h>
 #include <string.h>
+#include <unistd.h>
 
 using std::cout;
 using std::endl;
@@ -17,12 +18,12 @@ using std::endl;
 uint8_t led[NUM_LEDS][3];
 
 void write_latch(std::ofstream& out, unsigned int num_leds) {
-   unsigned int zeros = ((num_leds + 63) / 64) * 3;
+   unsigned int zeros = 1;//((num_leds + 63) / 64) * 3;
+
    uint8_t z[64];
    memset(z, 0, 64);
-   for (unsigned int i = 0; i < zeros; i+= 64) {
+   for (unsigned int i = 0; i < zeros; i++)
       out.write((char *)z, 64);
-   }
 }
 
 void draw(std::ofstream& out) {
@@ -31,16 +32,9 @@ void draw(std::ofstream& out) {
 
    for (unsigned int i = 0; i < (NUM_LEDS / 8); i++) {
       for (unsigned int c = 0; c < 3; c++) {
-         const uint8_t local[8] = {
-            led[i][c],
-            led[i +     NUM_LEDS_DIV8][c],
-            led[i + 2 * NUM_LEDS_DIV8][c],
-            led[i + 3 * NUM_LEDS_DIV8][c],
-            led[i + 4 * NUM_LEDS_DIV8][c],
-            led[i + 5 * NUM_LEDS_DIV8][c],
-            led[i + 6 * NUM_LEDS_DIV8][c],
-            led[i + 7 * NUM_LEDS_DIV8][c],
-         };
+         uint8_t local[8];
+         for (int j = 0; j < 8; j++)
+            local[j] = led[i + j * NUM_LEDS_DIV8][c];
 
          for (unsigned int bit = 0; bit < 8; bit++) {
             packet[packet_byte] = 0;
@@ -62,9 +56,9 @@ int main(int argc, char * argv[]) {
 
    //init
    for (int i = 0; i < NUM_LEDS; i++) {
-      led[i][0] = 0x80 | 127;
-      led[i][1] = 0x80;
-      led[i][2] = 0x80;
+      led[i][0] = 0x80 | 2;
+      led[i][1] = 0x80 | 2;
+      led[i][2] = 0x80 | 2;
    }
 
    if (!serial.is_open()) {
@@ -72,9 +66,17 @@ int main(int argc, char * argv[]) {
       exit(-1);
    }
 
-   draw(serial);
    write_latch(serial, NUM_LEDS);
-
    serial.flush();
+
+   usleep(1000);
+   draw(serial);
+   serial.flush();
+
+   usleep(10000);
+   write_latch(serial, NUM_LEDS);
+   serial.flush();
+
+
    serial.close();
 }
