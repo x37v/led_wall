@@ -17,6 +17,18 @@ using std::endl;
 
 uint8_t led[NUM_LEDS][3];
 
+uint8_t invert_byte(uint8_t b) {
+   return
+      (b & (0x1 << 0)) << 7 | 
+      (b & (0x1 << 1)) << 5 | 
+      (b & (0x1 << 2)) << 3 | 
+      (b & (0x1 << 3)) << 1 | 
+      (b & (0x1 << 4)) >> 1 | 
+      (b & (0x1 << 5)) >> 3 | 
+      (b & (0x1 << 6)) >> 5 | 
+      (b & (0x1 << 7)) >> 7;
+}
+
 void write_latch(std::ofstream& out, unsigned int num_leds) {
    unsigned int zeros = 1;//((num_leds + 63) / 64) * 3;
 
@@ -34,15 +46,17 @@ void draw(std::ofstream& out) {
       for (unsigned int c = 0; c < 3; c++) {
          uint8_t local[8];
          for (int j = 0; j < 8; j++)
-            local[j] = led[i + j * NUM_LEDS_DIV8][c];
+            local[j] = invert_byte(led[i + j * NUM_LEDS_DIV8][c]);
 
          for (unsigned int bit = 0; bit < 8; bit++) {
             packet[packet_byte] = 0;
             for (unsigned int l = 0; l < 8; l++)
                packet[packet_byte] |= (((local[l] & (1 << bit)) >> bit) << l);
+
             packet_byte++;
             if (packet_byte == 64) {
                out.write((char *)packet, 64);
+               out.flush();
                packet_byte = 0;
             }
          }
@@ -56,9 +70,9 @@ int main(int argc, char * argv[]) {
 
    //init
    for (int i = 0; i < NUM_LEDS; i++) {
-      led[i][0] = 0x80 | 2;
-      led[i][1] = 0x80 | 2;
-      led[i][2] = 0x80 | 2;
+      led[i][0] = 0x80 | 0;
+      led[i][1] = 0x80 | 0;
+      led[i][2] = 0x80 | 127;
    }
 
    if (!serial.is_open()) {
@@ -71,7 +85,6 @@ int main(int argc, char * argv[]) {
 
    usleep(1000);
    draw(serial);
-   serial.flush();
 
    usleep(10000);
    write_latch(serial, NUM_LEDS);
