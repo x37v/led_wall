@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
+#include <cstdlib>
 
 using std::cout;
 using std::endl;
@@ -80,15 +81,18 @@ int main(int argc, char * argv[]) {
    while(1) {
       memset(led, 0, NUM_LEDS * 3);
 
-      led[i][j] = 127;
+      //led[i][j] = 127;
+      for (int k = 0; k < NUM_LEDS; k++) {
+         led[k][j] = 12;
+      }
 
       write_latch(serial, NUM_LEDS);
       serial.flush();
 
-      usleep(1000);
+      usleep(100);
       draw(serial);
 
-      usleep(10000);
+      usleep(100);
       write_latch(serial, NUM_LEDS);
       serial.flush();
 
@@ -98,7 +102,6 @@ int main(int argc, char * argv[]) {
          j = (j + 1) % 3;
       }
    }
-
 
    serial.close();
 }
