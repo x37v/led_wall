@@ -13,7 +13,8 @@ using std::endl;
 //need to send 64 byte packets at a time
 //pad out like it was 8 strips
 
-#define NUM_LEDS (8 * 2 * 64)
+#define NUM_LEDS_PER_LINE (6 * 2 * 64)
+#define NUM_LEDS (8 * NUM_LEDS_PER_LINE)
 #define NUM_LEDS_DIV8 (NUM_LEDS / 8)
 
 uint8_t led[NUM_LEDS][3];
@@ -68,6 +69,11 @@ void draw(std::ofstream& out) {
 
 int main(int argc, char * argv[]) {
    std::ofstream serial(argv[1], std::ios_base::binary);
+   int program = 0;
+   if (argc > 2)
+      program = atoi(argv[2]);
+
+   cout << "program: " << program << endl;
 
    //init
 
@@ -75,33 +81,63 @@ int main(int argc, char * argv[]) {
       cout << "cannot open serial" << endl;
       exit(-1);
    }
+   memset(led, 0, NUM_LEDS * 3);
 
    int i = 0;
    int j = 0;
-   while(1) {
-      memset(led, 0, NUM_LEDS * 3);
 
-      //led[i][j] = 127;
-      for (int k = 0; k < NUM_LEDS; k++) {
-         led[k][j] = 12;
-      }
+   switch (program) {
+      default:
+      case 0:
+         while(1) {
+            memset(led, 0, NUM_LEDS * 3);
+            led[i][j] = 12;
 
-      write_latch(serial, NUM_LEDS);
-      serial.flush();
+            usleep(10);
+            draw(serial);
 
-      usleep(100);
-      draw(serial);
+            usleep(10);
+            write_latch(serial, NUM_LEDS);
+            serial.flush();
 
-      usleep(100);
-      write_latch(serial, NUM_LEDS);
-      serial.flush();
+            i += 1;
+            if (i >= NUM_LEDS_PER_LINE) {
+               i = 0;
+               j = (j + 1) % 3;
+            }
+         }
+      case 1:
+         while(1) {
+            memset(led, 0, NUM_LEDS * 3);
 
-      i += 1;
-      if (i >= NUM_LEDS) {
-         i = 0;
-         j = (j + 1) % 3;
-      }
+            //led[i][j] = 127;
+            for (int k = 0; k < NUM_LEDS; k++) {
+               switch((k + j) % 3) {
+                  case 0:
+                     led[k][0] = 50;
+                     break;
+                  case 1:
+                     led[k][1] = 50;
+                     break;
+                  case 2:
+                     led[k][2] = 50;
+                     break;
+               }
+            }
+
+            usleep(10);
+            draw(serial);
+
+            usleep(10);
+            write_latch(serial, NUM_LEDS);
+            serial.flush();
+
+            i += 1;
+            if (i >= 4) {
+               i = 0;
+               j = (j + 1) % 3;
+            }
+         }
    }
-
    serial.close();
 }
