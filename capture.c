@@ -24,6 +24,7 @@
 #include <asm/types.h>          /* for videodev2.h */
 
 #include <linux/videodev2.h>
+#include "led_driver.h"
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
@@ -39,14 +40,22 @@ struct buffer {
 };
 
 static char *           dev_name        = NULL;
+static char *           output_name        = NULL;
 static io_method io  = IO_METHOD_MMAP;
 static int fd              = -1;
 struct buffer *buffers         = NULL;
 static unsigned int n_buffers       = 0;
 
+#define led_columns (8 * 2 * 6)
+#define led_rows 64
+const unsigned int num_leds = (led_columns * led_rows);
+
 static int bytesperline = 0;
 static int width = 720;
 static int height = 480;
+
+static uint8_t * rgb_buffer = NULL;
+static uint8_t * led_buffer = NULL;
 
 static void errno_exit(const char *s) {
    fprintf (stderr, "%s error %d, %s\n", s, errno, strerror (errno));
@@ -89,17 +98,35 @@ static void process_image(struct buffer * b) {
    
   unsigned char *y = b->start;
 
-  printf("P2\n%d %d\n255\n", width, height);
+  //printf("P2\n%d %d\n255\n", width, height);
   int row, col;
   for (row=0; row<height; row++) {
-    for (col=0; col<width; col++) {
+    for (col=0; col < width; col++) {
       int intensity = *(y + 2 * col + (2 * row*width));
+      rgb_buffer[0 + 3 *(col + row * width)] = 
+         rgb_buffer[1 + 3 *(col + row * width)] = 
+         rgb_buffer[2 + 3 *(col + row * width)] = 
+         0x7F & (intensity >> 2);
+
       //int intensity = *(y + col);
-      printf("%d ", intensity);
+      //printf("%d ", intensity);
     }
-    printf("\n");
+    //printf("\n");
     //y += bytesperline;
   }
+
+  //XXX very rough calculations right now
+  unsigned int i;
+  for (i = 0; i < num_leds; i++) {
+     col = (i / led_rows) * width / led_columns;
+     if (i % 128 >= 64)
+        row = i % 64;
+     else
+        row = 63 - (i % 64);
+     memcpy(led_buffer + i * 3, rgb_buffer + 3 * (col + row * width), 3 * sizeof(uint8_t));
+  }
+
+  led_write_buffer(led_buffer);
 }
 
 static int read_frame(void) {
@@ -202,7 +229,7 @@ static int read_frame(void) {
 static void mainloop (void) {
    unsigned int count;
 
-   count = 100;
+   count = 1000;
 
    while (count-- > 0) {
       for (;;) {
@@ -549,6 +576,9 @@ static void init_device                     (void) {
    height = fmt.fmt.pix.height;
    bytesperline = fmt.fmt.pix.bytesperline;
 
+   rgb_buffer = malloc(sizeof(uint8_t) * width * height * 3);
+   led_buffer = malloc(sizeof(uint8_t) * num_leds * 3);
+
    //printf("size %d x %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
    //printf("bytes per line %d\n", fmt.fmt.pix.bytesperline);
    //printf("sizeimage %d\n", fmt.fmt.pix.sizeimage);
@@ -625,7 +655,8 @@ long_options [] = {
 };
 
 int main (int argc, char ** argv) {
-   dev_name = "/dev/video";
+   dev_name = "/dev/video0";
+   output_name = "/dev/ttyUSB000";
 
    //printf("%ld\n", sizeof(struct v4l2_buffer));
 
@@ -648,6 +679,9 @@ int main (int argc, char ** argv) {
             dev_name = optarg;
             break;
 
+         case 'o':
+            output_name = optarg;
+
          case 'h':
             usage (stdout, argc, argv);
             exit (EXIT_SUCCESS);
@@ -668,6 +702,11 @@ int main (int argc, char ** argv) {
             usage (stderr, argc, argv);
             exit (EXIT_FAILURE);
       }
+   }
+
+   if (!led_open_output(output_name, num_leds)) {
+      printf("cannot open output %s\n", output_name);
+      exit (EXIT_FAILURE);
    }
 
    open_device ();
