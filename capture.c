@@ -63,6 +63,7 @@ static int xioctl(int fd, int request, void * arg){
    return r;
 }
 
+/*
 //totally untested
 static void yuyv2rgb(int y, int u, int, v, int * r, int * g, int * b) {
    *r = (int)(1.164 * (float)(y - 16) + 1.596 * (float)(v - 128));
@@ -75,6 +76,7 @@ static void yuyv2rgb(int y, int u, int, v, int * r, int * g, int * b) {
    if (*b > 255)
       *b = 255;
 }
+*/
 
 static void process_image(struct buffer * b) {
    //struct v4l2_buffer * vbuff = (struct v4l2_buffer *)b;
