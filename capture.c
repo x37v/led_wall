@@ -72,9 +72,9 @@ static int xioctl(int fd, int request, void * arg){
    return r;
 }
 
-/*
 //totally untested
-static void yuyv2rgb(int y, int u, int, v, int * r, int * g, int * b) {
+/*
+static void yuyv2rgb(int y, int u, int v, int * r, int * g, int * b) {
    *r = (int)(1.164 * (float)(y - 16) + 1.596 * (float)(v - 128));
    *g = (int)(1.164 * (float)(y - 16) - 0.813 * (float)(v - 128) - 0.391 * (float)(u - 128));
    *b = (int)(1.164 * (float)(y - 16) + 2.018 * (float)(u - 128));
@@ -87,6 +87,18 @@ static void yuyv2rgb(int y, int u, int, v, int * r, int * g, int * b) {
 }
 */
 
+//http://en.wikipedia.org/wiki/YCbCr#CbCr_Planes_at_different_Y_values
+static void ycrcb2rgb(int y, int cr, int cb, int * r, int * g, int * b) {
+   //jpg
+   *r = (int)((float)y + 1.402f * (float)(cr - 128));
+   *g = (int)((float)y - 0.34414 * (float)(cb - 128) - 0.71414 * (float)(cr - 128));
+   *b = (int)((float)y + 1.772 * (float)(cb - 128));
+   
+   //*r = (int)(((float)y * 298.082) / 256.0 + (408.583 * (float)cr) / 256.0 - 222.921);
+   //*g = (int)(((float)y * 298.082) / 256.0 - (100.291 * (float)cb) / 256.0 - (208.120 * (float)cr) / 256.0 + 135.576);
+   //*b = (int)(((float)y * 298.082) / 256.0 + (516.412 * (float)cb) / 256.0 - 276.836);
+}
+
 static void process_image(struct buffer * b) {
    //struct v4l2_buffer * vbuff = (struct v4l2_buffer *)b;
    //printf("%d\n", vbuff->field);
@@ -96,17 +108,35 @@ static void process_image(struct buffer * b) {
    //fflush (stdout);
    //
    
-  unsigned char *y = b->start;
+  unsigned char *buff = b->start;
 
   //printf("P2\n%d %d\n255\n", width, height);
   int row, col;
   for (row=0; row<height; row++) {
     for (col=0; col < width; col++) {
+       int r,g,b;
+       int y, cb, cr;
+       int y_off = 2 * col + (2 * row*width);
+
+       y = *(buff + y_off);
+       if (col % 2 == 0) {
+          cb = buff[y_off + 1];
+          cr = buff[y_off + 3];
+       } else {
+          cb = buff[y_off - 1];
+          cr = buff[y_off + 1];
+       }
+       ycrcb2rgb(y, cb, cr, &r, &g, &b);
+       rgb_buffer[0 + 3 *(col + row * width)] = 0x7F & (r >> 1);
+       rgb_buffer[1 + 3 *(col + row * width)] = 0x7F & (g >> 1);
+       rgb_buffer[2 + 3 *(col + row * width)] = 0x7F & (b >> 1);
+      /*
       int intensity = *(y + 2 * col + (2 * row*width));
       rgb_buffer[0 + 3 *(col + row * width)] = 
          rgb_buffer[1 + 3 *(col + row * width)] = 
          rgb_buffer[2 + 3 *(col + row * width)] = 
          0x7F & (intensity >> 2);
+         */
 
       //int intensity = *(y + col);
       //printf("%d ", intensity);
