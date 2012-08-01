@@ -126,17 +126,18 @@ static void process_image(struct buffer * b) {
           cb = buff[y_off - 1];
           cr = buff[y_off + 1];
        }
+
+#if 0
        ycrcb2rgb(y, cb, cr, &r, &g, &b);
        rgb_buffer[0 + 3 *(col + row * width)] = 0x7F & (r >> 1);
        rgb_buffer[1 + 3 *(col + row * width)] = 0x7F & (g >> 1);
        rgb_buffer[2 + 3 *(col + row * width)] = 0x7F & (b >> 1);
-      /*
-      int intensity = *(y + 2 * col + (2 * row*width));
-      rgb_buffer[0 + 3 *(col + row * width)] = 
-         rgb_buffer[1 + 3 *(col + row * width)] = 
-         rgb_buffer[2 + 3 *(col + row * width)] = 
-         0x7F & (intensity >> 2);
-         */
+#else
+       rgb_buffer[0 + 3 *(col + row * width)] = 
+          rgb_buffer[1 + 3 *(col + row * width)] = 
+          rgb_buffer[2 + 3 *(col + row * width)] = 
+          0x7F & (y >> 2);
+#endif
 
       //int intensity = *(y + col);
       //printf("%d ", intensity);
@@ -259,9 +260,12 @@ static int read_frame(void) {
 static void mainloop (void) {
    unsigned int count;
 
+#if 0
    count = 1000;
-
    while (count-- > 0) {
+#else
+   while (1) {
+#endif
       for (;;) {
          fd_set fds;
          struct timeval tv;
