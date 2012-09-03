@@ -43,9 +43,13 @@ void draw(std::ofstream& out) {
    uint8_t packet[64];
    int packet_byte = 0;
 
+   //we are writing for 7 panels at once
    for (unsigned int i = 0; i < (num_leds / 8); i++) {
+
+     //for each color write a byte
       for (unsigned int c = 0; c < 3; c++) {
          uint8_t local[8];
+         //address each panel
          for (int j = 0; j < 8; j++)
             local[j] = reverse_bits(0x80 | led[3 * (i + j * num_leds_div_8) + c]);
 
@@ -59,10 +63,17 @@ void draw(std::ofstream& out) {
                out.write((char *)packet, 64);
                out.flush();
                packet_byte = 0;
+               //memset(packet, 0, 64);
             }
          }
-
       }
+      /*
+      if (packet_byte != 0) {
+        out.write((char *)packet, 64);
+        out.flush();
+        packet_byte = 0;
+      }
+      */
    }
 }
 
