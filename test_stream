@@ -1,0 +1,1 @@
+gst-launch -v videotestsrc ! "video/x-raw-yuv,width=720,height=480,framerate=30/1,format=(fourcc)YUY2" ! v4l2sink device=/dev/video1
