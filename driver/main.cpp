@@ -13,8 +13,8 @@ using std::endl;
 //need to send 64 byte packets at a time
 //pad out like it was 8 strips
 
-#define NUM_LEDS_PER_LINE (6 * 2 * 64)
-#define NUM_LEDS (8 * NUM_LEDS_PER_LINE)
+#define NUM_LEDS_PER_PANEL (6 * 2 * 64)
+#define NUM_LEDS (8 * NUM_LEDS_PER_PANEL)
 #define NUM_LEDS_DIV8 (NUM_LEDS / 8)
 
 uint8_t led[NUM_LEDS][3];
@@ -62,7 +62,6 @@ void draw(std::ofstream& out) {
                packet_byte = 0;
             }
          }
-
       }
    }
 }
@@ -85,13 +84,16 @@ int main(int argc, char * argv[]) {
 
    int i = 0;
    int j = 0;
+   int k = 0;
 
    switch (program) {
       default:
       case 0:
          while(1) {
             memset(led, 0, NUM_LEDS * 3);
-            led[i][j] = 12;
+            for (k = 0; k < 8; k++) {
+              led[i + k * NUM_LEDS_PER_PANEL][j] = 12;
+            }
 
             usleep(10);
             draw(serial);
@@ -101,7 +103,7 @@ int main(int argc, char * argv[]) {
             serial.flush();
 
             i += 1;
-            if (i >= NUM_LEDS_PER_LINE) {
+            if (i >= NUM_LEDS_PER_PANEL) {
                i = 0;
                j = (j + 1) % 3;
             }
