@@ -27,6 +27,7 @@
 #include "led_driver.h"
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
+#define BLACK_THRESH 22
 
 typedef enum {
    IO_METHOD_READ,
@@ -122,7 +123,13 @@ static void ycrcb2rgb(int y, uint8_t cr, uint8_t cb, int * r, int * g, int * b) 
    *g = (int)(1.164 * (y - 16) - 0.813 * (v - 128) - 0.391 * (u - 128));
    *r = (int)(1.164 * (y - 16) + 1.596 * (v - 128));
 
-   //printf("%i %i %i, %i %i %i\n", *r, *g, *b, y, cr, cb);
+   if (*r < BLACK_THRESH && *g < BLACK_THRESH && *b < BLACK_THRESH) {
+      *r = 0;
+      *g = 0;
+      *b = 0;
+   }
+
+   //printf("%i %i %i\n", *r, *g, *b);
 }
 
 static void process_image(struct buffer * b) {
