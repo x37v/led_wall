@@ -46,7 +46,7 @@ static int fd              = -1;
 struct buffer *buffers         = NULL;
 static unsigned int n_buffers       = 0;
 
-#define led_columns (8 * 2 * 6)
+#define led_columns (8 * 12)
 #define led_rows 64
 const unsigned int num_leds = (led_columns * led_rows);
 
@@ -88,15 +88,28 @@ static void yuyv2rgb(int y, int u, int v, int * r, int * g, int * b) {
 */
 
 //http://en.wikipedia.org/wiki/YCbCr#CbCr_Planes_at_different_Y_values
-static void ycrcb2rgb(int y, int cr, int cb, int * r, int * g, int * b) {
+static void ycrcb2rgb(int y, uint8_t cr, uint8_t cb, int * r, int * g, int * b) {
+   float fy = (float)y;
+   float fcr = (float)cr;
+   float fcb = (float)cb;
+
    //jpg
    //*r = (int)((float)y + 1.402f * (float)(cr - 128));
    //*g = (int)((float)y - 0.34414 * (float)(cb - 128) - 0.71414 * (float)(cr - 128));
    //*b = (int)((float)y + 1.772 * (float)(cb - 128));
    
-   *r = (int)(((float)y * 298.082) / 256.0 + (408.583 * (float)cr) / 256.0 - 222.921);
-   *g = (int)(((float)y * 298.082) / 256.0 - (100.291 * (float)cb) / 256.0 - (208.120 * (float)cr) / 256.0 + 135.576);
-   *b = (int)(((float)y * 298.082) / 256.0 + (516.412 * (float)cb) / 256.0 - 276.836);
+   //*r = (int)(255.0 / 219.0 * (fy - 16.0) + (255.0 / 112.0) * 0.701 * (fcr - 128.0));
+   //*g = (int)(255.0 / 219.0 * (fy - 16.0) - (255.0 / 112.0) * 0.886 * (0.114 / 0.587) * (fcb - 128.0) - (255.0 / 112.0) * 0.701 * (0.299 / 0.587) * (fcr - 128.0));
+   //*b = (int)(255.0 / 219.0 * (fy - 16.0) + (255.0 / 112.0) * 0.886 * (fcb - 128.0));
+   
+   float u = cr;
+   float v = cb;
+
+   *b = (int)(1.164 * (y - 16) + 2.018 * (u - 128));
+   *g = (int)(1.164 * (y - 16) - 0.813 * (v - 128) - 0.391 * (u - 128));
+   *r = (int)(1.164 * (y - 16) + 1.596 * (v - 128));
+
+   //printf("%i %i %i, %i %i %i\n", *r, *g, *b, y, cr, cb);
 }
 
 static void process_image(struct buffer * b) {
@@ -129,8 +142,9 @@ static void process_image(struct buffer * b) {
 
 #if 1
        ycrcb2rgb(y, cb, cr, &r, &g, &b);
-       rgb_buffer[0 + 3 *(col + row * width)] = 0x7F & (r >> 1);
-       rgb_buffer[1 + 3 *(col + row * width)] = 0x7F & (g >> 1);
+       //ycrcb2rgb(y, cr, cb, &r, &g, &b);
+       rgb_buffer[0 + 3 *(col + row * width)] = 0x7F & (g >> 1);
+       rgb_buffer[1 + 3 *(col + row * width)] = 0x7F & (r >> 1);
        rgb_buffer[2 + 3 *(col + row * width)] = 0x7F & (b >> 1);
 #else
        rgb_buffer[0 + 3 *(col + row * width)] = 
@@ -149,15 +163,16 @@ static void process_image(struct buffer * b) {
   //XXX very rough calculations right now
   unsigned int i;
   for (i = 0; i < num_leds; i++) {
-     col = (((i / led_rows) * width) / led_columns) % width;
+     col = ((i / led_rows) * width) / led_columns;
      if (i % 128 >= 64)
         row = i % 64;
      else
         row = 63 - (i % 64);
 
      row = (row * height) / 64;
+     uint8_t * pixel_loc = rgb_buffer + 3 * (col + row * width);
 
-     memcpy(led_buffer + i * 3, rgb_buffer + 3 * (col + row * width), 3 * sizeof(uint8_t));
+     memcpy(led_buffer + i * 3, pixel_loc, 3 * sizeof(uint8_t));
   }
 
   led_write_buffer(led_buffer);

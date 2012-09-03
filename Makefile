@@ -3,7 +3,8 @@ SRC = capture.c \
 OBJ = capture.o \
 		led_driver.o
 
-CFLAGS += -g -O2
+#CFLAGS += -g -O2
+CFLAGS += -O3
 
 .c.o:
 	@echo CC $<
