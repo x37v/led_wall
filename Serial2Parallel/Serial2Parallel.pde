@@ -34,7 +34,7 @@
 
 #include "usb_private.h"
 
-#define NUM_DIGITAL_PINS 25
+#define NUM_DIGITAL_PINS 28
 
 void setup() {
 	for (int i=0; i < NUM_DIGITAL_PINS; i++) {
