@@ -132,6 +132,21 @@ static void ycrcb2rgb(int y, uint8_t cr, uint8_t cb, int * r, int * g, int * b) 
    //printf("%i %i %i\n", *r, *g, *b);
 }
 
+inline void map_to_image(int ledcol, int ledrow, int *videocol, int *videorow) {
+  *videorow = (ledrow * height) / 64;
+  *videocol = (ledcol * width) / led_columns;
+
+  if (*videorow < 0)
+    *videorow = 0;
+  else if (*videorow >= height)
+    *videorow = height - 1;
+
+  if (*videocol < 0)
+    *videocol = 0;
+  else if (*videocol >= width)
+    *videocol = width - 1;
+}
+
 static void process_image(struct buffer * b) {
    //struct v4l2_buffer * vbuff = (struct v4l2_buffer *)b;
    //printf("%d\n", vbuff->field);
@@ -186,13 +201,14 @@ static void process_image(struct buffer * b) {
   //XXX very rough calculations right now
   unsigned int i;
   for (i = 0; i < num_leds; i++) {
-     col = ((i / led_rows) * width) / led_columns;
+     col = i / led_rows;
      if (i % 128 >= 64)
         row = i % 64;
      else
         row = 63 - (i % 64);
 
-     row = (row * height) / 64;
+     map_to_image(col, row, &col, &row);
+
      uint8_t * pixel_loc = rgb_buffer + 3 * (col + row * width);
 
      memcpy(led_buffer + i * 3, pixel_loc, 3 * sizeof(uint8_t));
