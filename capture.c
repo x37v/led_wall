@@ -701,6 +701,8 @@ static void close_device                    (void) {
 
 static void set_video_format(void) {
    //set up the video format.  NTSC
+   const v4l2_std_id std_desired = V4L2_STD_NTSC;
+
    struct v4l2_input input;
    v4l2_std_id std_id;
 
@@ -716,14 +718,14 @@ static void set_video_format(void) {
       exit (EXIT_FAILURE);
    }
 
-   if (0 == (input.std & V4L2_STD_NTSC)) {
+   if (0 == (input.std & std_desired)) {
       fprintf (stderr, "Oops. NTSC is not supported.\n");
       exit (EXIT_FAILURE);
    }
 
    /* Note this is also supposed to work when only NTSC is supported. */
 
-   std_id = V4L2_STD_NTSC;
+   std_id = std_desired;
 
    if (-1 == ioctl (fd, VIDIOC_S_STD, &std_id)) {
       perror ("VIDIOC_S_STD");

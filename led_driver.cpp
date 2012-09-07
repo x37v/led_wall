@@ -63,7 +63,7 @@ void draw(std::ofstream& out) {
                out.write((char *)packet, 64);
                out.flush();
                packet_byte = 0;
-               //memset(packet, 0, 64);
+               memset(packet, 0, 64);
             }
          }
       }
