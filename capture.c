@@ -247,6 +247,8 @@ static int read_frame(void) {
 
          buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
          buf.memory = V4L2_MEMORY_MMAP;
+         //buf.timecode.type = V4L2_TC_TYPE_30FPS; //ntsc
+         //buf.timecode.flags = V4L2_TC_FLAG_DROPFRAME; //ntsc
 
          if (-1 == xioctl (fd, VIDIOC_DQBUF, &buf)) {
             switch (errno) {
@@ -697,6 +699,38 @@ static void close_device                    (void) {
    fd = -1;
 }
 
+static void set_video_format(void) {
+   //set up the video format.  NTSC
+   struct v4l2_input input;
+   v4l2_std_id std_id;
+
+   memset (&input, 0, sizeof (input));
+
+   if (-1 == ioctl (fd, VIDIOC_G_INPUT, &input.index)) {
+      perror ("VIDIOC_G_INPUT");
+      exit (EXIT_FAILURE);
+   }
+
+   if (-1 == ioctl (fd, VIDIOC_ENUMINPUT, &input)) {
+      perror ("VIDIOC_ENUM_INPUT");
+      exit (EXIT_FAILURE);
+   }
+
+   if (0 == (input.std & V4L2_STD_NTSC)) {
+      fprintf (stderr, "Oops. NTSC is not supported.\n");
+      exit (EXIT_FAILURE);
+   }
+
+   /* Note this is also supposed to work when only NTSC is supported. */
+
+   std_id = V4L2_STD_NTSC;
+
+   if (-1 == ioctl (fd, VIDIOC_S_STD, &std_id)) {
+      perror ("VIDIOC_S_STD");
+      exit (EXIT_FAILURE);
+   }
+}
+
 static void open_device                     (void) {
    struct stat st; 
 
@@ -718,6 +752,8 @@ static void open_device                     (void) {
             dev_name, errno, strerror (errno));
       exit (EXIT_FAILURE);
    }
+
+   set_video_format();
 }
 
 static void usage (FILE * fp, int argc, char ** argv) {
