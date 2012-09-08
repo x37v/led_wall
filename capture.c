@@ -65,8 +65,12 @@ static unsigned int n_buffers       = 0;
 const unsigned int num_leds = (led_columns * led_rows);
 
 static int bytesperline = 0;
-static int width = 720;
-static int height = 480;
+//static int width = 1024;
+//static int height = 768;
+//static int width = 720;
+//static int height = 480;
+static int width = 384;
+static int height = 288;
 
 static uint8_t * rgb_buffer = NULL;
 static uint8_t * led_buffer = NULL;
@@ -133,6 +137,9 @@ static void ycrcb2rgb(int y, uint8_t cr, uint8_t cb, int * r, int * g, int * b) 
 }
 
 inline void map_to_image(int ledcol, int ledrow, int *videocol, int *videorow) {
+  //*videorow = (ledrow * height) / led_rows;
+  //*videocol = (ledcol * width) / led_columns;
+
   *videorow = (ledrow * (height - ((8 * height) / led_rows))) / led_rows + (height * 4) / led_rows;
   *videocol = (ledcol * (width - ((10 * width) / led_columns))) / led_columns + (5 * width) / led_columns;
 
@@ -672,9 +679,9 @@ static void init_device                     (void) {
    rgb_buffer = malloc(sizeof(uint8_t) * width * height * 3);
    led_buffer = malloc(sizeof(uint8_t) * num_leds * 3);
 
-   //printf("size %d x %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
-   //printf("bytes per line %d\n", fmt.fmt.pix.bytesperline);
-   //printf("sizeimage %d\n", fmt.fmt.pix.sizeimage);
+   printf("size %d x %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
+   printf("bytes per line %d\n", fmt.fmt.pix.bytesperline);
+   printf("sizeimage %d\n", fmt.fmt.pix.sizeimage);
    //exit(0);
 
    switch (io) {
@@ -699,9 +706,25 @@ static void close_device                    (void) {
    fd = -1;
 }
 
+static void set_framerate(void) {
+   struct v4l2_streamparm param;
+
+   memset(&param, 0, sizeof(struct v4l2_streamparm));
+   param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+   if (-1 == ioctl (fd, VIDIOC_G_PARM, &param)) {
+      perror ("VIDIOC_ENUM_INPUT");
+      exit (EXIT_FAILURE);
+   }
+
+   printf("framerate: %d / %d\n", param.parm.capture.timeperframe.numerator, param.parm.capture.timeperframe.denominator);
+   printf("capabilities: %x\n", param.parm.capture.capability);
+}
+
 static void set_video_format(void) {
    //set up the video format.  NTSC
-   const v4l2_std_id std_desired = V4L2_STD_NTSC;
+   //const v4l2_std_id std_desired = V4L2_STD_NTSC;
+   const v4l2_std_id std_desired = V4L2_STD_NTSC_M;
 
    struct v4l2_input input;
    v4l2_std_id std_id;
@@ -731,6 +754,8 @@ static void set_video_format(void) {
       perror ("VIDIOC_S_STD");
       exit (EXIT_FAILURE);
    }
+
+   //set_framerate();
 }
 
 static void open_device                     (void) {

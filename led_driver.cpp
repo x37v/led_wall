@@ -11,8 +11,6 @@
 using std::cout;
 using std::endl;
 
-#define COMPUTE_FRAME_DELAY
-
 namespace {
    std::ofstream serial;
    unsigned int num_leds;
