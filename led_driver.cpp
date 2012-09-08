@@ -6,16 +6,19 @@
 #include <string.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <sys/time.h>
 
 using std::cout;
 using std::endl;
 
+#define COMPUTE_FRAME_DELAY
 
 namespace {
    std::ofstream serial;
    unsigned int num_leds;
    unsigned int num_leds_div_8;
    uint8_t * led = NULL;
+   struct timeval time_last;
 }
 
 uint8_t reverse_bits(uint8_t b) {
@@ -42,6 +45,7 @@ void write_latch(std::ofstream& out, unsigned int num_leds) {
 void draw(std::ofstream& out) {
    uint8_t packet[64];
    int packet_byte = 0;
+   struct timeval time_now;
 
    //we are writing for 7 panels at once
    for (unsigned int i = 0; i < (num_leds / 8); i++) {
@@ -75,6 +79,16 @@ void draw(std::ofstream& out) {
       }
       */
    }
+
+#ifdef COMPUTE_FRAME_DELAY
+   memcpy(&time_last, &time_now, sizeof(struct timeval));
+   gettimeofday(&time_now, NULL);
+   if (time_now.tv_usec > time_last.tv_usec) {
+      cout << (time_now.tv_sec - time_last.tv_sec - 1) * 1000000 + (time_now.tv_usec + 1000000 - time_last.tv_usec) << endl;
+   } else {
+      cout << (time_now.tv_sec - time_last.tv_sec) * 1000000 + (time_now.tv_usec - time_last.tv_usec) << endl;
+   }
+#endif
 }
 
 int led_open_output(char * device_path, unsigned int led_count) {
@@ -89,6 +103,8 @@ int led_open_output(char * device_path, unsigned int led_count) {
       cout << "cannot open serial" << endl;
       return 0;
    }
+
+   gettimeofday(&time_last, NULL);
 
    return 1;
 }

@@ -785,7 +785,8 @@ long_options [] = {
 
 int main (int argc, char ** argv) {
    dev_name = "/dev/video0";
-   output_name = "/dev/ttyUSB000";
+   //output_name = "/dev/ttyUSB000";
+   output_name = "/dev/ttyACM0";
 
    //printf("%ld\n", sizeof(struct v4l2_buffer));
 
