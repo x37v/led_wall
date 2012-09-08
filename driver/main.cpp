@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <sys/time.h>
 
 using std::cout;
 using std::endl;
@@ -64,6 +65,13 @@ void draw(std::ofstream& out) {
          }
       }
    }
+/*
+   if (packet_byte != 0) {
+      out.write((char *)packet, 64);
+      out.flush();
+      packet_byte = 0;
+   }
+*/
 }
 
 int main(int argc, char * argv[]) {
@@ -86,6 +94,11 @@ int main(int argc, char * argv[]) {
    int j = 0;
    int k = 0;
 
+   struct timeval time_last;
+   struct timeval time_now;
+
+   gettimeofday(&time_last, NULL);
+
    switch (program) {
       default:
       case 0:
@@ -107,6 +120,15 @@ int main(int argc, char * argv[]) {
                i = 0;
                j = (j + 1) % 3;
             }
+
+            memcpy(&time_last, &time_now, sizeof(struct timeval));
+            gettimeofday(&time_now, NULL);
+            if (time_now.tv_usec > time_last.tv_usec) {
+               cout << (time_now.tv_sec - time_last.tv_sec - 1) * 1000000 + (time_now.tv_usec + 1000000 - time_last.tv_usec) << endl;
+            } else {
+               cout << (time_now.tv_sec - time_last.tv_sec) * 1000000 + (time_now.tv_usec - time_last.tv_usec) << endl;
+            }
+
          }
       case 1:
          while(1) {
