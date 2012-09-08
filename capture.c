@@ -810,8 +810,8 @@ long_options [] = {
 
 int main (int argc, char ** argv) {
    dev_name = "/dev/video0";
-   //output_name = "/dev/ttyUSB000";
-   output_name = "/dev/ttyACM0";
+   output_name = "/dev/ttyUSB000";
+   //output_name = "/dev/ttyACM0";
 
    //printf("%ld\n", sizeof(struct v4l2_buffer));
 
@@ -860,8 +860,12 @@ int main (int argc, char ** argv) {
    }
 
    if (!led_open_output(output_name, num_leds)) {
-      printf("cannot open output %s\n", output_name);
-      exit (EXIT_FAILURE);
+      printf("cannot open output %s, trying ttyACM0\n", output_name);
+      output_name = "/dev/ttyACM0";
+      if (!led_open_output(output_name, num_leds)) {
+         printf("cannot open output %s\n", output_name);
+         exit (EXIT_FAILURE);
+      }
    }
 
    open_device ();
