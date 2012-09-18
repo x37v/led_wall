@@ -870,6 +870,29 @@ int main (int argc, char ** argv) {
 
    open_device ();
    init_device ();
+
+   unsigned int i;
+   int row, col;
+   for (i = 0; i < num_leds; i++) {
+	   col = i / led_rows;
+	   if (i % 128 >= led_rows)
+		   row = i % led_rows;
+	   else
+		   row = 63 - (i % led_rows);
+	   led_buffer[i * 3] = 0;
+	   led_buffer[i * 3 + 1] = 0;
+	   led_buffer[i * 3 + 2] = 0;
+	   led_buffer[i * 3 + (row % 3)] = 64;
+   }
+
+   printf("drawing intro test screen for 10 seconds\n");
+   led_write_buffer(led_buffer);
+   led_write_buffer(led_buffer);
+   led_write_buffer(led_buffer);
+   led_write_buffer(led_buffer);
+   sleep(10);
+   printf("\n\n***starting video capture****\n\n");
+
    start_capturing ();
    mainloop ();
    stop_capturing ();
