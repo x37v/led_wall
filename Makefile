@@ -12,7 +12,7 @@ CFLAGS += -O3
 
 .cpp.o:
 	@echo CXX $<
-	@${CXX} -c ${CFLAGS} -lstdc++ -o $*.o $<
+	@${CXX} -c ${CFLAGS} -o $*.o $<
 
 capture: ${OBJ}
 	@echo CXX $<
