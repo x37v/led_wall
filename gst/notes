@@ -1,3 +1,5 @@
+xawtv
+
 gst-launch filesrc location=/home/alex/video/LITTLE_DIETER_NEEDS_TO_FLY/VIDEO_TS/VIDEO_TS.VOB ! dvddemux ! mpeg2dec ! xvimagesink
 gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/LITTLE_DIETER_NEEDS_TO_FLY/VIDEO_TS/VIDEO_TS.VOB ! dvddemux ! mpeg2dec ! ledwallvideosink
 gst-launch --gst-plugin-path=. videotestsrc ! 'video/x-raw-yuv,format=(fourcc)YUY2;video/x-raw,format=(fourcc)YV12' ! ledwallvideosink
