@@ -35,7 +35,7 @@
 #include "config.h"
 #endif
 
-#define TO_PGM
+//#define TO_PGM
 
 #include <string.h>
 #include <gst/gst.h>
@@ -47,6 +47,11 @@
 
 GST_DEBUG_CATEGORY_STATIC (gst_led_wall_video_sink_debug_category);
 #define GST_CAT_DEFAULT gst_led_wall_video_sink_debug_category
+
+#define led_columns (8 * 12)
+#define led_rows 64
+#define num_leds (led_columns * led_rows)
+static uint8_t led_buffer[num_leds * 3];
 
 /* prototypes */
 
@@ -62,6 +67,25 @@ static GstCaps * gst_led_wall_video_sink_getcaps(GstBaseSink * bsink);
 
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame (GstBaseSink * bsink, GstBuffer * buf);
+
+inline void map_to_image(int ledcol, int ledrow, int *videocol, int *videorow, unsigned int video_width, unsigned int video_height) {
+  *videorow = (ledrow * video_height) / led_rows;
+  *videocol = (ledcol * video_width) / led_columns;
+
+  //removed remapping aspect ratio
+  //*videorow = (ledrow * (video_height - ((8 * height) / led_rows))) / led_rows + (height * 4) / led_rows;
+  //*videocol = (ledcol * (video_width - ((10 * video_width) / led_columns))) / led_columns + (5 * video_width) / led_columns;
+
+  if (*videorow < 0)
+    *videorow = 0;
+  else if (*videorow >= video_height)
+    *videorow = video_height - 1;
+
+  if (*videocol < 0)
+    *videocol = 0;
+  else if (*videocol >= video_width)
+    *videocol = video_width - 1;
+}
 
 enum
 {
@@ -153,6 +177,15 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
   gstbasesink_class->get_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_getcaps);
   gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_setcaps);
 
+  char * output_name = "/dev/ttyUSB000";
+  if (!led_open_output(output_name, num_leds)) {
+    printf("cannot open output %s, trying ttyACM0\n", output_name);
+    output_name = "/dev/ttyACM0";
+    if (!led_open_output(output_name, num_leds)) {
+      printf("cannot open output %s\n", output_name);
+      exit (EXIT_FAILURE);
+    }
+  }
 }
 
 static void
@@ -216,8 +249,8 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
 {
   GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (bsink);
   guint8 * data = GST_BUFFER_DATA (buf);
-  gint width = GST_VIDEO_SINK_WIDTH(ledwallvideosink);
-  gint height = GST_VIDEO_SINK_HEIGHT(ledwallvideosink);
+  unsigned int width = GST_VIDEO_SINK_WIDTH(ledwallvideosink);
+  unsigned int height = GST_VIDEO_SINK_HEIGHT(ledwallvideosink);
 
   //printf("width %d height %d size: %d\n", width, height, GST_BUFFER_SIZE(buf));
   //printf("%d\n", data[0]);
@@ -232,6 +265,44 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     }
   }
   printf("\n");
+#else
+  for (unsigned int i = 0; i < num_leds; i++) {
+    int row, col;
+    int r,g,b;
+    int y, cb, cr;
+    int y_off;
+
+    //figure out our led row/column
+    col = i / led_rows;
+    if (i % 128 >= led_rows)
+      row = i % led_rows;
+    else
+      row = 63 - (i % led_rows);
+
+    //find the location row+column in the image
+    map_to_image(col, row, &col, &row, width, height);
+
+    //figure out the y, cr, cb
+    y_off = 2 * col + (2 * row*width);
+    y = data[y_off];
+
+    if (col % 2 == 0) {
+      cb = data[y_off + 1];
+      cr = data[y_off + 3];
+    } else {
+      cb = data[y_off - 1];
+      cr = data[y_off + 1];
+    }
+
+    //convert to rgb
+    ycrcb2rgb(y, cb, cr, &r, &g, &b);
+
+    //the colors are weird in the led output
+    led_buffer[0 + i * 3] = gamma_map(g);
+    led_buffer[1 + i * 3] = gamma_map(r);
+    led_buffer[2 + i * 3] = gamma_map(b);
+  }
+  led_write_buffer(led_buffer);
 #endif
 
   return GST_FLOW_OK;

@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <sys/time.h>
 
+using std::cerr;
 using std::cout;
 using std::endl;
 
@@ -16,7 +17,9 @@ namespace {
    unsigned int num_leds;
    unsigned int num_leds_div_8;
    uint8_t * led = NULL;
+#ifdef COMPUTE_FRAME_DELAY
    struct timeval time_last;
+#endif
 }
 
 uint8_t reverse_bits(uint8_t b) {
@@ -43,7 +46,9 @@ void write_latch(std::ofstream& out, unsigned int num_leds) {
 void draw(std::ofstream& out) {
    uint8_t packet[64];
    int packet_byte = 0;
+#ifdef COMPUTE_FRAME_DELAY
    struct timeval time_now;
+#endif
 
    //we are writing for 7 panels at once
    for (unsigned int i = 0; i < (num_leds / 8); i++) {
@@ -98,11 +103,13 @@ int led_open_output(char * device_path, unsigned int led_count) {
 
    serial.open(device_path, std::ios_base::binary);
    if (!serial.is_open()) {
-      cout << "cannot open serial" << endl;
+      cerr << "cannot open serial" << endl;
       return 0;
    }
 
+#ifdef COMPUTE_FRAME_DELAY
    gettimeofday(&time_last, NULL);
+#endif
 
    return 1;
 }

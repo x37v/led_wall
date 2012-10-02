@@ -12,7 +12,7 @@ CFLAGS += -I/usr/include/gstreamer-0.10/ -I/usr/include/glib-2.0/ -Wall
 CFLAGS += `pkg-config --cflags gstreamer-0.10 gstreamer-video-0.10 glib-2.0` -I..
 CFLAGS += -g -O2 -fPIC
 #CFLAGS += -O3
-LDFLAGS += `pkg-config --libs gstreamer-0.10 gstreamer-video-0.10 glib-2.0`
+LDFLAGS += `pkg-config --libs gstreamer-0.10 gstreamer-video-0.10 glib-2.0` -lstdc++
 
 all: gstledwallvideosink.so
 
