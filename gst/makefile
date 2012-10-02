@@ -1,12 +1,12 @@
 SRC = \
 			gstledwallvideosink.c  \
 			color.c \
-			../led_driver.cpp
+			led_driver.cpp
 		
 OBJ = \
 			gstledwallvideosink.o  \
 			color.o \
-			../led_driver.o
+			led_driver.o
 
 CFLAGS += -I/usr/include/gstreamer-0.10/ -I/usr/include/glib-2.0/ -Wall
 CFLAGS += `pkg-config --cflags gstreamer-0.10 gstreamer-video-0.10 glib-2.0` -I..
