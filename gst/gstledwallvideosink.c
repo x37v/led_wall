@@ -189,6 +189,7 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
       }
     }
   }
+  printf("opened %s\n", output_name);
 }
 
 static void
