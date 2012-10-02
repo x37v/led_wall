@@ -43,6 +43,7 @@
 #include <gst/video/video.h>
 #include "gstledwallvideosink.h"
 #include "color.h"
+#include "led_driver.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_led_wall_video_sink_debug_category);
 #define GST_CAT_DEFAULT gst_led_wall_video_sink_debug_category

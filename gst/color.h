@@ -1,6 +1,8 @@
 #ifndef LEDWALL_COLOR_H
 #define LEDWALL_COLOR_H
 
+#include <inttypes.h>
+
 #define BLACK_THRESH 22
 
 inline uint8_t gamma_map(int v);
