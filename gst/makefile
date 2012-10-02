@@ -29,3 +29,7 @@ gstledwallvideosink.so: ${OBJ}
 
 clean:
 	rm -f *.so ${OBJ}
+
+program:
+	teensy_loader_cli -mmcu=at90usb1286 -w ../Serial2Parallel.cpp.hex
+
