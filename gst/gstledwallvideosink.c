@@ -182,8 +182,11 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
     printf("cannot open output %s, trying ttyACM0\n", output_name);
     output_name = "/dev/ttyACM0";
     if (!led_open_output(output_name, num_leds)) {
-      printf("cannot open output %s\n", output_name);
-      exit (EXIT_FAILURE);
+      output_name = "/dev/ttyACM1";
+      if (!led_open_output(output_name, num_leds)) {
+        printf("cannot open output %s\n", output_name);
+        exit (EXIT_FAILURE);
+      }
     }
   }
 }
