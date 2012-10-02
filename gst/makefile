@@ -1,4 +1,4 @@
-CFLAGS += -I/usr/include/gstreamer-0.10/ -I/usr/include/glib-2.0/
+CFLAGS += -I/usr/include/gstreamer-0.10/ -I/usr/include/glib-2.0/ -std=c99
 
 all: gstledwallvideosink.so
 

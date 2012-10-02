@@ -35,11 +35,14 @@
 #include "config.h"
 #endif
 
+#define TO_PGM
+
 #include <string.h>
 #include <gst/gst.h>
 #include <gst/video/gstvideosink.h>
 #include <gst/video/video.h>
 #include "gstledwallvideosink.h"
+#include "color.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_led_wall_video_sink_debug_category);
 #define GST_CAT_DEFAULT gst_led_wall_video_sink_debug_category
@@ -211,13 +214,24 @@ gst_led_wall_video_sink_finalize (GObject * object)
 static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, GstBuffer * buf)
 {
   GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (bsink);
-  guint8 * data = NULL;
+  guint8 * data = GST_BUFFER_DATA (buf);
+  gint width = GST_VIDEO_SINK_WIDTH(ledwallvideosink);
+  gint height = GST_VIDEO_SINK_HEIGHT(ledwallvideosink);
 
-  printf("width %d height %d size: %d\n",
-      GST_VIDEO_SINK_WIDTH(ledwallvideosink), GST_VIDEO_SINK_HEIGHT(ledwallvideosink), GST_BUFFER_SIZE(buf));
-  data =  GST_BUFFER_DATA (buf);
-  printf("%d\n", data[0]);
-  //printf("%d\n", GST_BUFFER_DATA (buf)[1]);
+  //printf("width %d height %d size: %d\n", width, height, GST_BUFFER_SIZE(buf));
+  //printf("%d\n", data[0]);
+  
+#ifdef TO_PGM
+  //pgm
+  printf("P2\n%d %d\n255\n", width, height);
+  for (unsigned int row = 0; row < height; row++) {
+    for (unsigned int col = 0; col < width; col++) {
+      guint8 intensity = data[row * 2 * width + col * 2];
+      printf("%d ", (int)intensity);
+    }
+  }
+  printf("\n");
+#endif
 
   return GST_FLOW_OK;
 }
@@ -231,7 +245,9 @@ gst_led_wall_video_sink_getcaps (GstBaseSink * bsink) {
     return gst_caps_ref (xvimagesink->xcontext->caps);
     */
 
+#ifndef TO_PGM
   printf("get caps\n");
+#endif
 
   return gst_caps_copy (gst_pad_get_pad_template_caps (GST_VIDEO_SINK_PAD (ledwallvideosink)));
 }
@@ -246,7 +262,9 @@ gst_led_wall_video_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   gint width, height;
   ret = gst_structure_get_int (structure, "width", &width);
   ret &= gst_structure_get_int (structure, "height", &height);
+#ifndef TO_PGM
   printf("width %d height %d\n", width, height);
+#endif
 
   GST_VIDEO_SINK_WIDTH(ledwallvideosink) = width;
   GST_VIDEO_SINK_HEIGHT(ledwallvideosink) = height;
