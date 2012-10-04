@@ -1,26 +1,18 @@
 #include "led_driver.h"
-#include <iostream>
-#include <fstream>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
-#include <cstdlib>
 #include <sys/time.h>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-
-namespace {
-   std::ofstream serial;
-   unsigned int num_leds;
-   unsigned int num_leds_div_8;
-   uint8_t * led = NULL;
+FILE * serial = NULL;
+unsigned int num_leds;
+unsigned int num_leds_div_8;
+uint8_t * led = NULL;
 #ifdef COMPUTE_FRAME_DELAY
-   struct timeval time_last;
+struct timeval time_last;
 #endif
-}
 
 uint8_t reverse_bits(uint8_t b) {
    return
@@ -34,16 +26,16 @@ uint8_t reverse_bits(uint8_t b) {
       (b & (0x1 << 7)) >> 7;
 }
 
-void write_latch(std::ofstream& out, unsigned int num_leds) {
+void write_latch(FILE * out, unsigned int num_leds) {
    unsigned int zeros = 1;//((num_leds + 63) / 64) * 3;
 
    uint8_t z[64];
    memset(z, 0, 64);
    for (unsigned int i = 0; i < zeros; i++)
-      out.write((char *)z, 64);
+      fwrite(z, sizeof(char), 64, out);
 }
 
-void draw(std::ofstream& out) {
+void draw(FILE * out) {
    uint8_t packet[64];
    int packet_byte = 0;
 #ifdef COMPUTE_FRAME_DELAY
@@ -67,8 +59,8 @@ void draw(std::ofstream& out) {
 
             packet_byte++;
             if (packet_byte == 64) {
-               out.write((char *)packet, 64);
-               out.flush();
+               fwrite(packet, sizeof(char), 64, out);
+               fflush(out);
                packet_byte = 0;
                memset(packet, 0, 64);
             }
@@ -87,9 +79,9 @@ void draw(std::ofstream& out) {
    memcpy(&time_last, &time_now, sizeof(struct timeval));
    gettimeofday(&time_now, NULL);
    if (time_now.tv_usec > time_last.tv_usec) {
-      cout << (time_now.tv_sec - time_last.tv_sec - 1) * 1000000 + (time_now.tv_usec + 1000000 - time_last.tv_usec) << endl;
+      printf("%d\n", (time_now.tv_sec - time_last.tv_sec - 1) * 1000000 + (time_now.tv_usec + 1000000 - time_last.tv_usec));
    } else {
-      cout << (time_now.tv_sec - time_last.tv_sec) * 1000000 + (time_now.tv_usec - time_last.tv_usec) << endl;
+      printf("%d\n", (time_now.tv_sec - time_last.tv_sec) * 1000000 + (time_now.tv_usec - time_last.tv_usec));
    }
 #endif
 }
@@ -98,12 +90,12 @@ int led_open_output(char * device_path, unsigned int led_count) {
    num_leds = led_count;
    num_leds_div_8 = num_leds / 8;
 
-   led = new uint8_t[3 * num_leds];
+   led = (uint8_t *)malloc(sizeof(uint8_t) * 3 * num_leds);
    memset(led, 0, sizeof(uint8_t) * 3 * num_leds);
 
-   serial.open(device_path, std::ios_base::binary);
-   if (!serial.is_open()) {
-      cerr << "cannot open serial" << endl;
+   serial = fopen(device_path, "w");
+   if (!serial) {
+      fprintf(stderr, "cannot open serial\n");
       return 0;
    }
 
@@ -123,6 +115,6 @@ void led_write_buffer(uint8_t * rgb_buffer) {
 
    usleep(2);
    write_latch(serial, num_leds);
-   serial.flush();
+   fflush(serial);
 }
 
