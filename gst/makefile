@@ -21,7 +21,7 @@ all: gstledwallvideosink.so
 	@${CC} -c ${CFLAGS} -std=c99 -o $*.o $<
 
 gstledwallvideosink.so: ${OBJ}
-	${CC} -shared -o gstledwallvideosink.so ${LDFLAGS} ${OBJ}
+	${CC} -shared -o gstledwallvideosink.so ${OBJ} ${LDFLAGS}
 
 clean:
 	rm -f *.so ${OBJ}
