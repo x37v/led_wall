@@ -66,13 +66,13 @@ void draw(FILE * out) {
             }
          }
       }
-      /*
+/*
       if (packet_byte != 0) {
-        out.write((char *)packet, 64);
-        out.flush();
+        fwrite(packet, sizeof(char), 64, out);
+        fflush(out);
         packet_byte = 0;
       }
-      */
+*/
    }
 
 #ifdef COMPUTE_FRAME_DELAY
