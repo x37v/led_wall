@@ -5,3 +5,4 @@ gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/LITTLE_DIETER_N
 gst-launch --gst-plugin-path=. videotestsrc ! 'video/x-raw-yuv,format=(fourcc)YUY2;video/x-raw,format=(fourcc)YV12' ! ledwallvideosink
 gst-launch --gst-plugin-path=. v4l2src ! 'video/x-raw-yuv,format=(fourcc)YUY2;video/x-raw-rgb' ! ledwallvideosink
 gst-launch --gst-plugin-path=. v4l2src device=/dev/video1 ! 'video/x-raw-yuv,format=(fourcc)YUY2,width=360,height=240' ! ledwallvideosink
+gst-launch --gst-plugin-path=. v4l2src device=/dev/video1 ! 'video/x-raw-yuv,format=(fourcc)YUY2;video/x-raw,format=(fourcc)YV12' ! autovideosink
