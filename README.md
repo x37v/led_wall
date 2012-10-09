@@ -33,3 +33,8 @@ mingetty setup /etc/init/tty1.conf
     respawn
     #exec /sbin/getty -8 38400 tty1
     exec /sbin/mingetty --autologin wall tty1
+
+thanks
+====
+
+http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx [helped me understand the protocol]
