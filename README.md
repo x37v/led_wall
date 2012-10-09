@@ -38,3 +38,4 @@ thanks
 ====
 
 http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx [helped me understand the protocol]
+https://www.pjrc.com/ [wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs]
