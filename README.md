@@ -22,7 +22,7 @@ contents of bash_profile:
 mingetty setup /etc/init/tty1.conf
 ====
 
-Created user 'wall' with above bash_profile
+Created user 'wall' with above bash_profile.
 This gets them to autologin
 
     # tty1 - getty
@@ -48,9 +48,10 @@ ubuntu dependencies, I think
 thanks
 ====
 
-* http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx [helped me understand the protocol]
-* https://www.pjrc.com/ [wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs]
-* folks on the gstreamer freenode irc channel
-* August Black, Wes Smith, various video advice
-* http://www.polyvinylrecords.com/artists/index.php?id=824 STRFKR folks for providing us with this opportunity
-* http://stackoverflow.com/users/198536/wallyk [answered http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c which really helped for serial setup]
+* [Eric Arcana](http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx) helped me understand the protocol
+* [Paul Stoffregen](https://www.pjrc.com/), wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs
+* folks on the [gstreamer](http://freenode.net/) [freenode irc](http://freenode.net/) channel
+* [August Black](http://aug.ment.org/), [Wes Smith](http://moniker.name/worldmaking/), video advice
+* [Jason Plumb](http://noisybox.net/) told me about mingetty
+* [STRFKR](http://www.polyvinylrecords.com/artists/index.php?id=824) folks for providing us with this opportunity
+* [wallyk](http://stackoverflow.com/users/198536/wallyk) [answered http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c which really helped for serial setup]
