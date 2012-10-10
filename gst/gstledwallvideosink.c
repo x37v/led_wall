@@ -244,6 +244,7 @@ gst_led_wall_video_sink_finalize (GObject * object)
   /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
 
   /* clean up object here */
+  led_close();
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
