@@ -5,8 +5,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-FILE * serial = NULL;
+
+//FILE * serial = NULL;
+int serial = -1;
 unsigned int num_leds;
 unsigned int num_leds_div_8;
 uint8_t * led = NULL;
@@ -26,16 +31,17 @@ uint8_t reverse_bits(uint8_t b) {
       (b & (0x1 << 7)) >> 7;
 }
 
-void write_latch(FILE * out, unsigned int num_leds) {
+void write_latch(int out, unsigned int num_leds) {
    unsigned int zeros = 1;//((num_leds + 63) / 64) * 3;
 
    uint8_t z[64];
    memset(z, 0, 64);
-   for (unsigned int i = 0; i < zeros; i++)
-      fwrite(z, sizeof(char), 64, out);
+   for (unsigned int i = 0; i < zeros; i++) {
+      write(out, z, sizeof(char) * 64);
+   }
 }
 
-void draw(FILE * out) {
+void draw(int out) {
    uint8_t packet[64];
    int packet_byte = 0;
 #ifdef COMPUTE_FRAME_DELAY
@@ -59,8 +65,7 @@ void draw(FILE * out) {
 
             packet_byte++;
             if (packet_byte == 64) {
-               fwrite(packet, sizeof(char), 64, out);
-               fflush(out);
+               write(out, packet, sizeof(char) * 64);
                packet_byte = 0;
                memset(packet, 0, 64);
             }
@@ -69,7 +74,6 @@ void draw(FILE * out) {
 /*
       if (packet_byte != 0) {
         fwrite(packet, sizeof(char), 64, out);
-        fflush(out);
         packet_byte = 0;
       }
 */
@@ -93,7 +97,8 @@ int led_open_output(char * device_path, unsigned int led_count) {
    led = (uint8_t *)malloc(sizeof(uint8_t) * 3 * num_leds);
    memset(led, 0, sizeof(uint8_t) * 3 * num_leds);
 
-   serial = fopen(device_path, "w");
+   //serial = fopen(device_path, "w");
+   serial = open(device_path, O_RDWR | O_NOCTTY | O_SYNC);
    if (!serial) {
       fprintf(stderr, "cannot open serial\n");
       return 0;
@@ -115,6 +120,5 @@ void led_write_buffer(uint8_t * rgb_buffer) {
 
    usleep(2);
    write_latch(serial, num_leds);
-   fflush(serial);
 }
 
