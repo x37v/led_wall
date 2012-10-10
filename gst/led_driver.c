@@ -29,9 +29,15 @@ struct timeval time_last;
 int set_interface_attribs (int fd, int speed, int parity) {
   struct termios tty;
   memset (&tty, 0, sizeof tty);
-  if (tcgetattr (fd, &tty) != 0)
-  {
-    fprintf(stderr, "error %d from tcgetattr", errno);
+  if (tcgetattr (fd, &tty) != 0) {
+    switch(errno) {
+      case EBADF:
+        fprintf(stderr, "bad file descriptor from tcgetattr");
+        break;
+      default:
+        fprintf(stderr, "error %d from tcgetattr", errno);
+        break;
+    }
     return -1;
   }
 
@@ -57,8 +63,7 @@ int set_interface_attribs (int fd, int speed, int parity) {
   tty.c_cflag &= ~CSTOPB;
   //tty.c_cflag &= ~CRTSCTS;
 
-  if (tcsetattr (fd, TCSANOW, &tty) != 0)
-  {
+  if (tcsetattr (fd, TCSANOW, &tty) != 0) {
     fprintf(stderr, "error %d from tcsetattr", errno);
     return -1;
   }
@@ -130,16 +135,15 @@ void draw(int out) {
             if (packet_byte == 64) {
                write(out, packet, sizeof(char) * 64);
                packet_byte = 0;
-               memset(packet, 0, 64);
             }
          }
       }
-/*
-      if (packet_byte != 0) {
-        fwrite(packet, sizeof(char), 64, out);
-        packet_byte = 0;
-      }
-*/
+   }
+
+   if (packet_byte != 0) {
+     memset(packet + packet_byte, 0, 64 - packet_byte);
+     write(out, packet, sizeof(char) * 64);
+     packet_byte = 0;
    }
 
 #ifdef COMPUTE_FRAME_DELAY
