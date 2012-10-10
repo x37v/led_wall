@@ -15,7 +15,7 @@ contents of bash_profile:
     while :
     do
     	echo "starting capture"
-    	gst-launch --gst-plugin-path=/home/wall/led_wall/gst/ v4l2src ! 'video/x-raw-yuv,format=(fourcc)YUY2;video/x-raw-rgb' ! ledwallvideosink
+        /home/wall/led_wall/run_wall
     	sleep 1
     done
 
