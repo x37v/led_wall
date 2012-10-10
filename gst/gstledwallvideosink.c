@@ -103,36 +103,16 @@ static GstStaticPadTemplate gst_led_wall_video_sink_sink_template =
 GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
-    /*
-    GST_STATIC_CAPS (
-      "video/x-raw-yuv," \
-      "width=(int)[1,8000]," \
-      "height=(int)[1,6000]," \
-      "pixel-aspect-ratio=(fraction)1/1," \
-      "framerate=(fraction)[0/1,100/1]")
-      */
     GST_STATIC_CAPS (
       "video/x-raw-rgb, "
         "framerate = (fraction) [ 0, MAX ], "
         "width = (int) 96, "
         "height = (int) 64; "
-      //"video/x-raw-yuv, "
-        //"framerate = (fraction) [ 0, MAX ], "
-        //"width = (int) [ 1, MAX ], "
-        //"height = (int) [ 1, MAX ]"
-        )
-
-    //GST_STATIC_CAPS ("video/x-raw-yuv, width=640, height=480, format=(fourcc)YUY2")
-    //GST_STATIC_CAPS ("video/x-raw-yuv, "
-        //"framerate = (fraction) [ 0, MAX ], "
-        //"width = (int) [ 1, MAX ], " "height = (int) [ 1, MAX ]")
-    //GST_STATIC_CAPS (GST_GL_VIDEO_CAPS ";"
-        //GST_VIDEO_CAPS_RGB ";" GST_VIDEO_CAPS_BGR ";"
-        //GST_VIDEO_CAPS_RGBx ";" GST_VIDEO_CAPS_BGRx ";"
-        //GST_VIDEO_CAPS_xRGB ";" GST_VIDEO_CAPS_xBGR ";"
-        //GST_VIDEO_CAPS_RGBA ";" GST_VIDEO_CAPS_BGRA ";"
-        //GST_VIDEO_CAPS_ARGB ";" GST_VIDEO_CAPS_ABGR ";"
-        //GST_VIDEO_CAPS_YUV ("{ I420, YV12, YUY2, UYVY, AYUV }"))
+        //should we have these enabled below?
+        //bpp=(int)32, depth=(int)24, endianness=(int)4321, red_mask=(int)65280, green_mask=(int)16711680, blue_mask=(int)-16777216
+        //unsure about framerate based on USB capabilities
+        //framerate=(fraction)[ 0/1, 2147483647/1 ]
+      )
     );
 
 
