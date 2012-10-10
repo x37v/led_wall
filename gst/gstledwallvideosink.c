@@ -60,6 +60,11 @@ static void gst_led_wall_video_sink_set_property (GObject * object,
     guint property_id, const GValue * value, GParamSpec * pspec);
 static void gst_led_wall_video_sink_get_property (GObject * object,
     guint property_id, GValue * value, GParamSpec * pspec);
+
+static GObject *
+gst_led_wall_video_sink_construct(GType gtype,
+    guint n_properties,
+    GObjectConstructParam *properties);
 static void gst_led_wall_video_sink_dispose (GObject * object);
 static void gst_led_wall_video_sink_finalize (GObject * object);
 static gboolean gst_led_wall_video_sink_setcaps(GstBaseSink * bsink, GstCaps * caps);
@@ -168,6 +173,8 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
 
   gobject_class->set_property = gst_led_wall_video_sink_set_property;
   gobject_class->get_property = gst_led_wall_video_sink_get_property;
+
+  gobject_class->constructor = gst_led_wall_video_sink_construct;
   gobject_class->dispose = gst_led_wall_video_sink_dispose;
   gobject_class->finalize = gst_led_wall_video_sink_finalize;
 
@@ -177,19 +184,6 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
   gstbasesink_class->get_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_getcaps);
   gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_setcaps);
 
-  char * output_name = "/dev/ttyUSB000";
-  if (!led_open_output(output_name, num_leds)) {
-    printf("cannot open output %s, trying ttyACM0\n", output_name);
-    output_name = "/dev/ttyACM0";
-    if (!led_open_output(output_name, num_leds)) {
-      output_name = "/dev/ttyACM1";
-      if (!led_open_output(output_name, num_leds)) {
-        printf("cannot open output %s\n", output_name);
-        exit (EXIT_FAILURE);
-      }
-    }
-  }
-  printf("opened %s\n", output_name);
 }
 
 static void
@@ -226,6 +220,35 @@ gst_led_wall_video_sink_get_property (GObject * object, guint property_id,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
   }
+}
+
+static GObject *
+gst_led_wall_video_sink_construct(GType gtype,
+    guint n_properties,
+    GObjectConstructParam *properties) {
+  GObject *obj;
+  {
+    /* Always chain up to the parent constructor */
+    obj = G_OBJECT_CLASS (parent_class)->constructor (gtype, n_properties, properties);
+  }
+
+  /* update the object state depending on constructor properties */
+
+  char * output_name = "/dev/ttyUSB000";
+  if (!led_open_output(output_name, num_leds)) {
+    printf("cannot open output %s, trying ttyACM0\n", output_name);
+    output_name = "/dev/ttyACM0";
+    if (!led_open_output(output_name, num_leds)) {
+      output_name = "/dev/ttyACM1";
+      if (!led_open_output(output_name, num_leds)) {
+        printf("cannot open output %s\n", output_name);
+        exit (EXIT_FAILURE);
+      }
+    }
+  }
+  printf("opened %s\n", output_name);
+
+  return obj;
 }
 
 void
