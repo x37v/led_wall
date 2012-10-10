@@ -234,10 +234,11 @@ gst_led_wall_video_sink_construct(GType gtype,
 
   /* update the object state depending on constructor properties */
 
-  char * output_name = "/dev/ttyUSB000";
+  //char * output_name = "/dev/ttyUSB000";
+  char * output_name = "/dev/ttyACM0";
   if (!led_open_output(output_name, num_leds)) {
-    printf("cannot open output %s, trying ttyACM0\n", output_name);
-    output_name = "/dev/ttyACM0";
+    printf("cannot open output %s, trying ttyUSB000\n", output_name);
+    output_name = "/dev/ttyUSB000";
     if (!led_open_output(output_name, num_leds)) {
       output_name = "/dev/ttyACM1";
       if (!led_open_output(output_name, num_leds)) {
