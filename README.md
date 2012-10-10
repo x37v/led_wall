@@ -54,4 +54,4 @@ thanks
 * [August Black](http://aug.ment.org/), [Wes Smith](http://moniker.name/worldmaking/), video advice
 * [Jason Plumb](http://noisybox.net/) told me about mingetty
 * [STRFKR](http://www.polyvinylrecords.com/artists/index.php?id=824) folks for providing us with this opportunity
-* [wallyk](http://stackoverflow.com/users/198536/wallyk) [answered http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c which really helped for serial setup]
+* [wallyk](http://stackoverflow.com/users/198536/wallyk) answered http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c which really helped for serial setup
