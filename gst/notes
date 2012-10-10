@@ -8,3 +8,6 @@ gst-launch --gst-plugin-path=. v4l2src device=/dev/video1 ! 'video/x-raw-yuv,for
 gst-launch --gst-plugin-path=. v4l2src device=/dev/video1 ! 'video/x-raw-yuv,format=(fourcc)YUY2;video/x-raw,format=(fourcc)YV12' ! autovideosink
 gst-launch --gst-plugin-path=. v4l2src device=/dev/video2 ! videoscale ! video/x-raw-yuv,width=96,height=64,format='(fourcc)'YUY2 ! ledwallvideosink
 gst-launch --gst-plugin-path=. filesrc location=../../teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=96,height=64,format='(fourcc)'YUY2 ! ledwallvideosink
+
+
+gst-launch --gst-plugin-path=. videotestsrc ! 'video/x-raw-yuv,format=(fourcc)YUY2' ! ledwallvideosink
