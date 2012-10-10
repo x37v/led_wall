@@ -22,6 +22,9 @@ contents of bash_profile:
 mingetty setup /etc/init/tty1.conf
 ====
 
+Created user 'wall' with above bash_profile
+This gets them to autologin
+
     # tty1 - getty
     #
     # This service maintains a getty on tty1 from the point the system is
