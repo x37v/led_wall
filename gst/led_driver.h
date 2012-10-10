@@ -8,4 +8,6 @@ int led_open_output(char * device_path, unsigned int num_leds);
 //starting upper left drawing rows at a time.
 void led_write_buffer(uint8_t * rgb_buffer);
 
+void led_close();
+
 #endif
