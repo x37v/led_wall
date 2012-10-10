@@ -10,14 +10,12 @@ gst-launch --gst-plugin-path=. v4l2src device=/dev/video2 ! videoscale ! video/x
 gst-launch --gst-plugin-path=. filesrc location=../../teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-yuv,width=96,height=64,format='(fourcc)'YUY2 ! ledwallvideosink
 
 
-gst-launch --gst-plugin-path=. videotestsrc ! 'video/x-raw-yuv,format=(fourcc)YUY2' ! ledwallvideosink
-gst-launch --gst-plugin-path=. videotestsrc ! videorate ! 'video/x-raw-yuv,format=(fourcc)YUY2,framerate=15/1' ! ledwallvideosink
 gst-launch --gst-plugin-path=. videotestsrc ! ffmpegcolorspace ! videoscale ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGBA ! ledwallvideosink
-gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGB ! ledwallvideosink
+gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGBA ! ledwallvideosink
 
 
 gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! videorate ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGBA,framerate=15/1 ! ledwallvideosink
-gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGB ! ledwallvideosink
+gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGBA ! ledwallvideosink
 
 
 gst-launch --gst-plugin-path=. videotestsrc ! ffmpegcolorspace ! videoscale ! videorate ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGBA,framerate=15/1 ! ledwallvideosink
