@@ -3,6 +3,10 @@ led_wall
 
 Led Wall
 
+ubuntu dependencies, I think
+=====
+    libgstreamer-plugins-base0.10-dev libgstreamer0.10-dev build-essential pkg-conf gstreamer0.10-tools gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly
+
 contents of bash_profile:
 ========
 
