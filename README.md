@@ -45,9 +45,9 @@ ubuntu dependencies, I think
 thanks
 ====
 
-http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx [helped me understand the protocol]
-https://www.pjrc.com/ [wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs]
-folks on the gstreamer freenode irc channel
-August Black, Wes Smith, various video advice
-http://www.polyvinylrecords.com/artists/index.php?id=824 STRFKR folks for providing us with this opportunity
-http://stackoverflow.com/users/198536/wallyk [answered http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c which really helped for serial setup]
+* http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx [helped me understand the protocol]
+* https://www.pjrc.com/ [wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs]
+* folks on the gstreamer freenode irc channel
+* August Black, Wes Smith, various video advice
+* http://www.polyvinylrecords.com/artists/index.php?id=824 STRFKR folks for providing us with this opportunity
+* http://stackoverflow.com/users/198536/wallyk [answered http://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c which really helped for serial setup]
