@@ -1,11 +1,11 @@
-led_wall
+LED WALL!!!
 ========
 
-Led Wall
+Built by Hans Lindauer, programmed by Alex Norman for Starfucker
 
-ubuntu dependencies, I think
-=====
-    libgstreamer-plugins-base0.10-dev libgstreamer0.10-dev build-essential pkg-conf gstreamer0.10-tools gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly
+build details:
+
+http://dorkbotpdx.org/blog/armatronix/led_video_wall
 
 contents of bash_profile:
 ========
@@ -37,6 +37,10 @@ mingetty setup /etc/init/tty1.conf
     respawn
     #exec /sbin/getty -8 38400 tty1
     exec /sbin/mingetty --autologin wall tty1
+
+ubuntu dependencies, I think
+=====
+    libgstreamer-plugins-base0.10-dev libgstreamer0.10-dev build-essential pkg-conf gstreamer0.10-tools gstreamer0.10-plugins-good gstreamer0.10-plugins-bad gstreamer0.10-plugins-ugly
 
 thanks
 ====
