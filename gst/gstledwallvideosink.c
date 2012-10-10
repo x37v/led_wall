@@ -277,7 +277,7 @@ gst_led_wall_video_sink_finalize (GObject * object)
 static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, GstBuffer * buf)
 {
   GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (bsink);
-  guint8 * data = GST_BUFFER_DATA (buf);
+  //guint8 * data = GST_BUFFER_DATA (buf);
   unsigned int width = GST_VIDEO_SINK_WIDTH(ledwallvideosink);
   unsigned int height = GST_VIDEO_SINK_HEIGHT(ledwallvideosink);
 
@@ -298,8 +298,6 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
   for (unsigned int i = 0; i < num_leds; i++) {
     int row, col;
     int r,g,b;
-    int y, cb, cr;
-    int y_off;
 
     //figure out our led row/column
     col = i / led_rows;
@@ -312,6 +310,8 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     map_to_image(col, row, &col, &row, width, height);
 
 #if 0
+    int y, cb, cr;
+    int y_off;
     //figure out the y, cr, cb
     y_off = 2 * col + (2 * row*width);
     y = data[y_off];
@@ -358,9 +358,9 @@ gst_led_wall_video_sink_getcaps (GstBaseSink * bsink) {
     return gst_caps_ref (xvimagesink->xcontext->caps);
     */
 
-#ifndef TO_PGM
-  printf("get caps\n");
-#endif
+//#ifndef TO_PGM
+//  printf("get caps\n");
+//#endif
 
   return gst_caps_copy (gst_pad_get_pad_template_caps (GST_VIDEO_SINK_PAD (ledwallvideosink)));
 }
@@ -375,9 +375,9 @@ gst_led_wall_video_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   gint width, height;
   ret = gst_structure_get_int (structure, "width", &width);
   ret &= gst_structure_get_int (structure, "height", &height);
-#ifndef TO_PGM
-  printf("width %d height %d\n", width, height);
-#endif
+//#ifndef TO_PGM
+//  printf("width %d height %d\n", width, height);
+//#endif
 
   GST_VIDEO_SINK_WIDTH(ledwallvideosink) = width;
   GST_VIDEO_SINK_HEIGHT(ledwallvideosink) = height;
