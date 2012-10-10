@@ -339,15 +339,9 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
 #endif
 
     //the colors are weird in the led output
-    //led_buffer[1 + i * 3] = gamma_map(g);
-    //led_buffer[0 + i * 3] = gamma_map(r);
-    //led_buffer[2 + i * 3] = gamma_map(b);
-    //led_buffer[0 + i * 3] = gamma_map(g);
-    //led_buffer[1 + i * 3] = gamma_map(r);
-    //led_buffer[2 + i * 3] = gamma_map(b);
     led_buffer[0 + i * 3] = gamma_map(g);
-    led_buffer[1 + i * 3] = gamma_map(b);
-    led_buffer[2 + i * 3] = gamma_map(r);
+    led_buffer[1 + i * 3] = gamma_map(r);
+    led_buffer[2 + i * 3] = gamma_map(b);
   }
   led_write_buffer(led_buffer);
 #endif
