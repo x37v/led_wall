@@ -11,3 +11,4 @@ gst-launch --gst-plugin-path=. filesrc location=../../teapotassembly.mpg ! decod
 
 
 gst-launch --gst-plugin-path=. videotestsrc ! 'video/x-raw-yuv,format=(fourcc)YUY2' ! ledwallvideosink
+gst-launch --gst-plugin-path=. filesrc location=/home/alex/video/teapotassembly.mpg ! decodebin2 ! ffmpegcolorspace ! videoscale ! video/x-raw-rgb,width=96,height=64,format='(fourcc)'RGB ! ledwallvideosink
