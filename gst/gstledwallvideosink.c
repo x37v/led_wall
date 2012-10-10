@@ -107,14 +107,14 @@ GST_STATIC_PAD_TEMPLATE ("sink",
       "framerate=(fraction)[0/1,100/1]")
       */
     GST_STATIC_CAPS (
-      //"video/x-raw-rgb, "
+      "video/x-raw-rgb, "
+        "framerate = (fraction) [ 0, MAX ], "
+        "width = (int) 96, "
+        "height = (int) 64; "
+      //"video/x-raw-yuv, "
         //"framerate = (fraction) [ 0, MAX ], "
         //"width = (int) [ 1, MAX ], "
-        //"height = (int) [ 1, MAX ]; "
-      "video/x-raw-yuv, "
-        "framerate = (fraction) [ 0, MAX ], "
-        "width = (int) [ 1, MAX ], "
-        "height = (int) [ 1, MAX ]"
+        //"height = (int) [ 1, MAX ]"
         )
 
     //GST_STATIC_CAPS ("video/x-raw-yuv, width=640, height=480, format=(fourcc)YUY2")
@@ -286,6 +286,7 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     //find the location row+column in the image
     map_to_image(col, row, &col, &row, width, height);
 
+#if 0
     //figure out the y, cr, cb
     y_off = 2 * col + (2 * row*width);
     y = data[y_off];
@@ -300,11 +301,28 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
 
     //convert to rgb
     ycrcb2rgb(y, cb, cr, &r, &g, &b);
+#else
+    //direct rgb
+    guint32 * rgba = (guint32 *)GST_BUFFER_DATA (buf);
+    guint32 pixel = rgba[col + row * width];
+    r = (pixel >> 16) & 0xFF;
+    g = (pixel >>  8) & 0xFF;
+    b = (pixel >>  0) & 0xFF;
+    //r = data[y_off + 1];
+    //g = data[y_off + 2];
+    //b = data[y_off + 0];
+#endif
 
     //the colors are weird in the led output
-    led_buffer[1 + i * 3] = gamma_map(g);
-    led_buffer[0 + i * 3] = gamma_map(r);
-    led_buffer[2 + i * 3] = gamma_map(b);
+    //led_buffer[1 + i * 3] = gamma_map(g);
+    //led_buffer[0 + i * 3] = gamma_map(r);
+    //led_buffer[2 + i * 3] = gamma_map(b);
+    //led_buffer[0 + i * 3] = gamma_map(g);
+    //led_buffer[1 + i * 3] = gamma_map(r);
+    //led_buffer[2 + i * 3] = gamma_map(b);
+    led_buffer[0 + i * 3] = gamma_map(g);
+    led_buffer[1 + i * 3] = gamma_map(b);
+    led_buffer[2 + i * 3] = gamma_map(r);
   }
   led_write_buffer(led_buffer);
 #endif
