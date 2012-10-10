@@ -49,3 +49,4 @@ http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx [h
 https://www.pjrc.com/ [wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs]
 folks on the gstreamer freenode irc channel
 August Black, Wes Smith, various video advice
+http://www.polyvinylrecords.com/artists/index.php?id=824 STRFKR folks for providing us with this opportunity
