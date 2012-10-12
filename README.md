@@ -48,6 +48,7 @@ ubuntu dependencies, I think
 thanks
 ====
 
+* [Jan Schmidt](https://github.com/thaytan) GStreamer help.
 * [Eric Arcana](http://riderx.info/post/The-LPD8806-protocol-for-Adafruit-RGB-LED-Strips.aspx) helped me understand the protocol
 * [Paul Stoffregen](https://www.pjrc.com/), wrote the microcontroller code.. USB -> 8 parallel data/clock serial pairs
 * folks on the [gstreamer](http://freenode.net/) [freenode irc](http://freenode.net/) channel
