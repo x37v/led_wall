@@ -19,13 +19,13 @@
 /**
  * SECTION:element-gstledwallvideosink
  *
- * The ledwallvideosink element does FIXME stuff.
+ * The ledwallvideosink element outputs RGB frames a USB connected
+ * LED video wall.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v fakesrc ! ledwallvideosink ! FIXME ! fakesink
- * gst-launch --gst-plugin-path=. -v fakesrc ! ledwallvideosink
+ * gst-launch --gst-plugin-path=. -v videotestsrc ! ledwallvideosink
  * ]|
  * FIXME Describe what the pipeline does.
  * </refsect2>
@@ -54,8 +54,6 @@ GST_DEBUG_CATEGORY_STATIC (gst_led_wall_video_sink_debug_category);
 static uint8_t led_buffer[num_leds * 3];
 
 /* prototypes */
-
-
 static void gst_led_wall_video_sink_set_property (GObject * object,
     guint property_id, const GValue * value, GParamSpec * pspec);
 static void gst_led_wall_video_sink_get_property (GObject * object,
