@@ -32,10 +32,10 @@ int set_interface_attribs (int fd, int speed, int parity) {
   if (tcgetattr (fd, &tty) != 0) {
     switch(errno) {
       case EBADF:
-        fprintf(stderr, "bad file descriptor from tcgetattr");
+        fprintf(stderr, "bad file descriptor from tcgetattr\n");
         break;
       default:
-        fprintf(stderr, "error %d from tcgetattr", errno);
+        fprintf(stderr, "error %d from tcgetattr\n", errno);
         break;
     }
     return -1;
@@ -64,25 +64,26 @@ int set_interface_attribs (int fd, int speed, int parity) {
   //tty.c_cflag &= ~CRTSCTS;
 
   if (tcsetattr (fd, TCSANOW, &tty) != 0) {
-    fprintf(stderr, "error %d from tcsetattr", errno);
+    fprintf(stderr, "error %d from tcsetattr\n", errno);
     return -1;
   }
   return 0;
 }
 
-void set_blocking (int fd, int should_block) {
+int set_blocking (int fd, int should_block) {
   struct termios tty;
   memset (&tty, 0, sizeof tty);
   if (tcgetattr (fd, &tty) != 0) {
-    fprintf(stderr, "error %d from tggetattr", errno);
-    return;
+    fprintf(stderr, "error %d from tggetattr\n", errno);
+    return -1;
   }
 
   tty.c_cc[VMIN]  = should_block ? 1 : 0;
   tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
 
   if (tcsetattr (fd, TCSANOW, &tty) != 0)
-    fprintf(stderr, "error %d setting term attributes", errno);
+    fprintf(stderr, "error %d setting term attributes\n", errno);
+  return 0;
 }
 
 
@@ -167,11 +168,15 @@ int led_open_output(char * device_path, unsigned int led_count) {
    //serial = fopen(device_path, "w");
    serial = open(device_path, O_RDWR | O_NOCTTY | O_SYNC);
    if (!serial) {
-      fprintf(stderr, "cannot open serial\n");
+      fprintf(stderr, "cannot open serial %s\n", device_path);
       return 0;
    }
-   set_interface_attribs(serial, B115200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
-   set_blocking(serial, 1);                // set blocking
+   // set speed to 115,200 bps, 8n1 (no parity)
+   // set blocking
+   if (set_interface_attribs(serial, B115200, 0) != 0 || set_blocking(serial, 1) != 0) {
+      fprintf(stderr, "cannot setup serial %s\n", device_path);
+      return 0;
+   }
 
 #ifdef COMPUTE_FRAME_DELAY
    gettimeofday(&time_last, NULL);
