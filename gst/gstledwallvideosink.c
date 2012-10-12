@@ -269,6 +269,11 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
   //printf("width %d height %d size: %d\n", width, height, GST_BUFFER_SIZE(buf));
   //printf("%d\n", data[0]);
   
+  int color_change = FALSE;
+  int totalr, totalg, totalb;
+
+  totalr = totalb = totalg = -1;
+  
 #ifdef TO_PGM
   //pgm
   printf("P2\n%d %d\n255\n", width, height);
@@ -322,9 +327,21 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     //g = data[y_off + 2];
     //b = data[y_off + 0];
 #endif
-
-    if (r == 0 && g == 1 && b == 192)
-      r = g = b = 0;
+    if (r != totalr) {
+      totalr = r;
+      if (i != 0)
+        color_change = TRUE;
+    }
+    if (g != totalg) {
+      totalg = g;
+      if (i != 0)
+        color_change = TRUE;
+    }
+    if (b != totalb) {
+      totalb = b;
+      if (i != 0)
+        color_change = TRUE;
+    }
 
     /*
     if (r != sr) {
@@ -349,6 +366,11 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     led_buffer[1 + i * 3] = gamma_map(r);
     led_buffer[2 + i * 3] = gamma_map(b);
   }
+
+  //ditching blue screen
+  if (!color_change && totalr == 0 && totalg == 1 && totalb == 192)
+    memset(led_buffer, 0, 3 * num_leds);
+
   led_write_buffer(led_buffer);
 #endif
 
