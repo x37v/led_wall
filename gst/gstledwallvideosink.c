@@ -327,15 +327,15 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
 
     if (r != sr) {
       sr = r;
-      printf("r = %d", r);
+      printf("r = %d\n", r);
     }
     if (g != sg) {
       sg = g;
-      printf("g = %d", g);
+      printf("g = %d\n", g);
     }
     if (b != sb) {
       sb = b;
-      printf("b = %d", b);
+      printf("b = %d\n", b);
     }
 
     //the colors are weird in the led output
