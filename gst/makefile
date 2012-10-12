@@ -18,10 +18,10 @@ all: gstledwallvideosink.so
 
 .c.o:
 	@echo CC $<
-	@${CC} -c ${CFLAGS} -std=c99 -o $*.o $<
+	@${CC} -Wall -Wextra -c ${CFLAGS} -std=c99 -o $*.o $<
 
 gstledwallvideosink.so: ${OBJ}
-	${CC} -shared -o gstledwallvideosink.so ${OBJ} ${LDFLAGS}
+	${CC} -Wall -Wextra -shared -o gstledwallvideosink.so ${OBJ} ${LDFLAGS}
 
 clean:
 	rm -f *.so ${OBJ}
