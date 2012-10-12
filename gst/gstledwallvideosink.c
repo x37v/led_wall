@@ -1,5 +1,5 @@
 /* GStreamer
- * Copyright (C) 2012 FIXME <fixme@example.com>
+ * Copyright (C) 2012 Alex Norman <alex@x37v.info>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -27,15 +27,13 @@
  * |[
  * gst-launch --gst-plugin-path=. -v videotestsrc ! ledwallvideosink
  * ]|
- * FIXME Describe what the pipeline does.
+ * Plays a test screen on the video wall.
  * </refsect2>
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
-//#define TO_PGM
 
 #include <string.h>
 #include <gst/gst.h>
@@ -255,6 +253,11 @@ gst_led_wall_video_sink_finalize (GObject * object)
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
+/*
+static int sr = 0;
+static int sg = 0;
+static int sb = 0;
+*/
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, GstBuffer * buf)
 {
@@ -265,20 +268,15 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
   int num_leds = sink->rows * sink->cols;
   int led_rows = sink->rows;
 
+  int color_change = FALSE;
+  //figure out the colors at the first pixel, for blue screen detection
+  int firstr, firstg, firstb;
+
+  firstr = firstb = firstg = -1;
+
   //printf("width %d height %d size: %d\n", width, height, GST_BUFFER_SIZE(buf));
   //printf("%d\n", data[0]);
   
-#ifdef TO_PGM
-  //pgm
-  printf("P2\n%d %d\n255\n", width, height);
-  for (unsigned int row = 0; row < height; row++) {
-    for (unsigned int col = 0; col < width; col++) {
-      guint8 intensity = data[row * 2 * width + col * 2];
-      printf("%d ", (int)intensity);
-    }
-  }
-  printf("\n");
-#else
   for (int i = 0; i < num_leds; i++) {
     int row, col;
     int r,g,b;
@@ -293,42 +291,52 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     //find the location row+column in the image
     map_to_image(sink, col, row, &col, &row, width, height);
 
-#if 0
-    int y, cb, cr;
-    int y_off;
-    //figure out the y, cr, cb
-    y_off = 2 * col + (2 * row*width);
-    y = data[y_off];
-
-    if (col % 2 == 0) {
-      cb = data[y_off + 1];
-      cr = data[y_off + 3];
-    } else {
-      cb = data[y_off - 1];
-      cr = data[y_off + 1];
-    }
-
-    //convert to rgb
-    ycrcb2rgb(y, cb, cr, &r, &g, &b);
-#else
     //direct rgb
     guint32 * rgba = (guint32 *)GST_BUFFER_DATA (buf);
     guint32 pixel = rgba[col + row * width];
     r = (pixel >> 16) & 0xFF;
     g = (pixel >>  8) & 0xFF;
     b = (pixel >>  0) & 0xFF;
-    //r = data[y_off + 1];
-    //g = data[y_off + 2];
-    //b = data[y_off + 0];
-#endif
+
+    if (i == 0) {
+      firstr = r;
+      firstg = g;
+      firstb = b;
+    } else if (r != firstr || g != firstg || b != firstb) {
+      color_change = TRUE;
+    }
+
+    /*
+       if (r != sr) {
+       sr = r;
+       printf("r = %d\n", r);
+       }
+       if (g != sg) {
+       sg = g;
+       printf("g = %d\n", g);
+       }
+       if (b != sb) {
+       sb = b;
+       printf("b = %d\n", b);
+       }
+       */
+
+    //thresholding to turn off leds
+    if (r < BLACK_THRESH && g < BLACK_THRESH && b < BLACK_THRESH)
+      r = g = b = 0;
 
     //the colors are weird in the led output
     sink->led_buffer[0 + i * 3] = gamma_map(g);
     sink->led_buffer[1 + i * 3] = gamma_map(r);
     sink->led_buffer[2 + i * 3] = gamma_map(b);
   }
+
+  //ditching blue screen
+  if (!color_change && firstr == 0 && firstg == 1 && firstb == 192)
+    memset(sink->led_buffer, 0, 3 * num_leds);
+
+
   led_write_buffer(sink->led_buffer);
-#endif
 
   return GST_FLOW_OK;
 }
@@ -342,9 +350,6 @@ gst_led_wall_video_sink_getcaps (GstBaseSink * bsink) {
     return gst_caps_ref (xvimagesink->xcontext->caps);
     */
 
-//#ifndef TO_PGM
-//  printf("get caps\n");
-//#endif
 
   return gst_caps_copy (gst_pad_get_pad_template_caps (GST_VIDEO_SINK_PAD (ledwallvideosink)));
 }
@@ -359,9 +364,6 @@ gst_led_wall_video_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   gint width, height;
   ret = gst_structure_get_int (structure, "width", &width);
   ret &= gst_structure_get_int (structure, "height", &height);
-//#ifndef TO_PGM
-//  printf("width %d height %d\n", width, height);
-//#endif
 
   GST_VIDEO_SINK_WIDTH(ledwallvideosink) = width;
   GST_VIDEO_SINK_HEIGHT(ledwallvideosink) = height;
