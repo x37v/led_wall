@@ -268,11 +268,13 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
   int num_leds = sink->rows * sink->cols;
   int led_rows = sink->rows;
 
+  /*
   int color_change = FALSE;
   //figure out the colors at the first pixel, for blue screen detection
   int firstr, firstg, firstb;
 
   firstr = firstb = firstg = -1;
+  */
 
   //printf("width %d height %d size: %d\n", width, height, GST_BUFFER_SIZE(buf));
   //printf("%d\n", data[0]);
@@ -298,6 +300,7 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     g = (pixel >>  8) & 0xFF;
     b = (pixel >>  0) & 0xFF;
 
+    /*
     if (i == 0) {
       firstr = r;
       firstg = g;
@@ -305,6 +308,7 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     } else if (r != firstr || g != firstg || b != firstb) {
       color_change = TRUE;
     }
+    */
 
     /*
        if (r != sr) {
@@ -321,6 +325,10 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
        }
        */
 
+    //remove blue 'blank' screen [any pixel with that color]
+    if (r == 0 && g == 1 && b == 192)
+      r = g = b = 0;
+
     //thresholding to turn off leds
     if (r < BLACK_THRESH && g < BLACK_THRESH && b < BLACK_THRESH)
       r = g = b = 0;
@@ -331,10 +339,11 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     sink->led_buffer[2 + i * 3] = gamma_map(b);
   }
 
+  /*
   //ditching blue screen
   if (!color_change && firstr == 0 && firstg == 1 && firstb == 192)
     memset(sink->led_buffer, 0, 3 * num_leds);
-
+    */
 
   led_write_buffer(sink->led_buffer);
 
