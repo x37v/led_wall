@@ -318,6 +318,9 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     //b = data[y_off + 0];
 #endif
 
+    if (r < BLACK_THRESH && g < BLACK_THRESH && b < BLACK_THRESH)
+      r = g = b = 0;
+
     //the colors are weird in the led output
     led_buffer[0 + i * 3] = gamma_map(g);
     led_buffer[1 + i * 3] = gamma_map(r);
