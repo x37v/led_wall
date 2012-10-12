@@ -253,10 +253,11 @@ gst_led_wall_video_sink_finalize (GObject * object)
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
+/*
 static int sr = 0;
 static int sg = 0;
 static int sb = 0;
-
+*/
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, GstBuffer * buf)
 {
@@ -322,6 +323,10 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
     //b = data[y_off + 0];
 #endif
 
+    if (r == 0 && g == 1 && b == 192)
+      r = g = b = 0;
+
+    /*
     if (r != sr) {
       sr = r;
       printf("r = %d\n", r);
@@ -334,6 +339,7 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
       sb = b;
       printf("b = %d\n", b);
     }
+    */
 
     if (r < BLACK_THRESH && g < BLACK_THRESH && b < BLACK_THRESH)
       r = g = b = 0;
