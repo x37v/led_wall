@@ -1,5 +1,5 @@
 /* GStreamer
- * Copyright (C) 2012 FIXME <fixme@example.com>
+ * Copyright (C) 2012 Alex Norman <alex@x37v.info>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -19,23 +19,21 @@
 /**
  * SECTION:element-gstledwallvideosink
  *
- * The ledwallvideosink element does FIXME stuff.
+ * The ledwallvideosink element outputs RGB frames a USB connected
+ * LED video wall.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v fakesrc ! ledwallvideosink ! FIXME ! fakesink
- * gst-launch --gst-plugin-path=. -v fakesrc ! ledwallvideosink
+ * gst-launch --gst-plugin-path=. -v videotestsrc ! ledwallvideosink
  * ]|
- * FIXME Describe what the pipeline does.
+ * Plays a test screen on the video wall.
  * </refsect2>
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
-//#define TO_PGM
 
 #include <string.h>
 #include <gst/gst.h>
@@ -48,34 +46,36 @@
 GST_DEBUG_CATEGORY_STATIC (gst_led_wall_video_sink_debug_category);
 #define GST_CAT_DEFAULT gst_led_wall_video_sink_debug_category
 
-#define led_columns (8 * 12)
-#define led_rows 64
-#define num_leds (led_columns * led_rows)
-static uint8_t led_buffer[num_leds * 3];
+#define DEFAULT_DEVICE "/dev/ttyACM0"
+#define DEFAULT_ROWS 64
+#define DEFAULT_COLS (8 * 12)
+
+enum {
+  PROP_0,
+  PROP_COLUMNS,
+  PROP_ROWS,
+  PROP_DEVICE
+};
 
 /* prototypes */
-
-
 static void gst_led_wall_video_sink_set_property (GObject * object,
     guint property_id, const GValue * value, GParamSpec * pspec);
 static void gst_led_wall_video_sink_get_property (GObject * object,
     guint property_id, GValue * value, GParamSpec * pspec);
 
-static GObject *
-gst_led_wall_video_sink_construct(GType gtype,
-    guint n_properties,
-    GObjectConstructParam *properties);
 static void gst_led_wall_video_sink_dispose (GObject * object);
 static void gst_led_wall_video_sink_finalize (GObject * object);
 static gboolean gst_led_wall_video_sink_setcaps(GstBaseSink * bsink, GstCaps * caps);
 static GstCaps * gst_led_wall_video_sink_getcaps(GstBaseSink * bsink);
-
+static GstStateChangeReturn gst_led_wall_video_sink_change_state (GstElement * element,
+    GstStateChange transition);
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame (GstBaseSink * bsink, GstBuffer * buf);
 
-inline void map_to_image(int ledcol, int ledrow, int *videocol, int *videorow, unsigned int video_width, unsigned int video_height) {
-  *videorow = (ledrow * video_height) / led_rows;
-  *videocol = (ledcol * video_width) / led_columns;
+static inline
+void map_to_image(GstLedWallVideoSink *sink, int ledcol, int ledrow, int *videocol, int *videorow, int video_width, int video_height) {
+  *videorow = (ledrow * video_height) / sink->rows;
+  *videocol = (ledcol * video_width) / sink->cols;
 
   //removed remapping aspect ratio
   //*videorow = (ledrow * (video_height - ((8 * height) / led_rows))) / led_rows + (height * 4) / led_rows;
@@ -91,11 +91,6 @@ inline void map_to_image(int ledcol, int ledrow, int *videocol, int *videorow, u
   else if (*videocol >= video_width)
     *videocol = video_width - 1;
 }
-
-enum
-{
-  PROP_0
-};
 
 /* pad templates */
 
@@ -150,11 +145,11 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   //GstVideoSinkClass *video_sink_class = GST_VIDEO_SINK_CLASS (klass);
   GstBaseSinkClass *gstbasesink_class = (GstBaseSinkClass *) klass;
+  GstElementClass *gstelement_class = (GstElementClass *) klass;
 
   gobject_class->set_property = gst_led_wall_video_sink_set_property;
   gobject_class->get_property = gst_led_wall_video_sink_get_property;
 
-  gobject_class->constructor = gst_led_wall_video_sink_construct;
   gobject_class->dispose = gst_led_wall_video_sink_dispose;
   gobject_class->finalize = gst_led_wall_video_sink_finalize;
 
@@ -164,25 +159,55 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
   gstbasesink_class->get_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_getcaps);
   gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_setcaps);
 
+  gstelement_class->change_state =
+      GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_change_state);
+
+  g_object_class_install_property (gobject_class, PROP_DEVICE,
+      g_param_spec_string ("device", "Output device",
+          "Location of the serial device for output", DEFAULT_DEVICE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_COLUMNS,
+      g_param_spec_int ("columns", "LED columns",
+          "Number of pixel columns to output", 0, G_MAXINT,
+          DEFAULT_COLS, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_ROWS,
+      g_param_spec_int ("rows", "LED rows",
+          "Number of pixel rows to output", 0, G_MAXINT,
+          DEFAULT_ROWS, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
 }
 
 static void
 gst_led_wall_video_sink_init (GstLedWallVideoSink * ledwallvideosink,
-    GstLedWallVideoSinkClass * ledwallvideosink_class)
+    GstLedWallVideoSinkClass * ledwallvideosink_class G_GNUC_UNUSED)
 {
 
   ledwallvideosink->sinkpad =
       gst_pad_new_from_static_template (&gst_led_wall_video_sink_sink_template,
       "sink");
+
+  ledwallvideosink->device = g_strdup (DEFAULT_DEVICE);
+  ledwallvideosink->requested_rows = ledwallvideosink->rows = DEFAULT_ROWS;
+  ledwallvideosink->requested_cols = ledwallvideosink->cols = DEFAULT_COLS;
 }
 
 void
 gst_led_wall_video_sink_set_property (GObject * object, guint property_id,
     const GValue * value, GParamSpec * pspec)
 {
-  /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
+  GstLedWallVideoSink *sink = GST_LED_WALL_VIDEO_SINK (object);
 
   switch (property_id) {
+    case PROP_DEVICE:
+      g_free (sink->device);
+      sink->device = g_value_dup_string (value);
+      break;
+    case PROP_ROWS:
+      sink->requested_rows = g_value_get_int (value);
+      break;
+    case PROP_COLUMNS:
+      sink->requested_cols = g_value_get_int (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -193,62 +218,37 @@ void
 gst_led_wall_video_sink_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
 {
-  /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
+  GstLedWallVideoSink *sink = GST_LED_WALL_VIDEO_SINK (object);
 
   switch (property_id) {
+    case PROP_DEVICE:
+      g_value_set_string (value, sink->device);
+      break;
+    case PROP_ROWS:
+      g_value_set_int (value, sink->requested_rows);
+      break;
+    case PROP_COLUMNS:
+      g_value_set_int (value, sink->requested_cols);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
   }
 }
 
-static GObject *
-gst_led_wall_video_sink_construct(GType gtype,
-    guint n_properties,
-    GObjectConstructParam *properties) {
-  GObject *obj;
-  {
-    /* Always chain up to the parent constructor */
-    obj = G_OBJECT_CLASS (parent_class)->constructor (gtype, n_properties, properties);
-  }
-
-  /* update the object state depending on constructor properties */
-
-  //char * output_name = "/dev/ttyUSB000";
-  char * output_name = "/dev/ttyACM0";
-  if (!led_open_output(output_name, num_leds)) {
-    printf("cannot open output %s, trying ttyUSB000\n", output_name);
-    output_name = "/dev/ttyUSB000";
-    if (!led_open_output(output_name, num_leds)) {
-      output_name = "/dev/ttyACM1";
-      if (!led_open_output(output_name, num_leds)) {
-        printf("cannot open output %s\n", output_name);
-        exit (EXIT_FAILURE);
-      }
-    }
-  }
-  printf("opened %s\n", output_name);
-
-  return obj;
-}
-
 void
 gst_led_wall_video_sink_dispose (GObject * object)
 {
   /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
-
   /* clean up as possible.  may be called multiple times */
-
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
 void
 gst_led_wall_video_sink_finalize (GObject * object)
 {
-  /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
-
-  /* clean up object here */
-  led_close();
+  GstLedWallVideoSink *sink = GST_LED_WALL_VIDEO_SINK (object);
+  g_free (sink->device);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -261,31 +261,23 @@ static int sb = 0;
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, GstBuffer * buf)
 {
-  GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (bsink);
+  GstLedWallVideoSink *sink = GST_LED_WALL_VIDEO_SINK (bsink);
   //guint8 * data = GST_BUFFER_DATA (buf);
-  unsigned int width = GST_VIDEO_SINK_WIDTH(ledwallvideosink);
-  unsigned int height = GST_VIDEO_SINK_HEIGHT(ledwallvideosink);
+  unsigned int width = GST_VIDEO_SINK_WIDTH(sink);
+  unsigned int height = GST_VIDEO_SINK_HEIGHT(sink);
+  int num_leds = sink->rows * sink->cols;
+  int led_rows = sink->rows;
+
+  int color_change = FALSE;
+  //figure out the colors at the first pixel, for blue screen detection
+  int firstr, firstg, firstb;
+
+  firstr = firstb = firstg = -1;
 
   //printf("width %d height %d size: %d\n", width, height, GST_BUFFER_SIZE(buf));
   //printf("%d\n", data[0]);
   
-  int color_change = FALSE;
-  int totalr, totalg, totalb;
-
-  totalr = totalb = totalg = -1;
-  
-#ifdef TO_PGM
-  //pgm
-  printf("P2\n%d %d\n255\n", width, height);
-  for (unsigned int row = 0; row < height; row++) {
-    for (unsigned int col = 0; col < width; col++) {
-      guint8 intensity = data[row * 2 * width + col * 2];
-      printf("%d ", (int)intensity);
-    }
-  }
-  printf("\n");
-#else
-  for (unsigned int i = 0; i < num_leds; i++) {
+  for (int i = 0; i < num_leds; i++) {
     int row, col;
     int r,g,b;
 
@@ -297,82 +289,54 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
       row = 63 - (i % led_rows);
 
     //find the location row+column in the image
-    map_to_image(col, row, &col, &row, width, height);
+    map_to_image(sink, col, row, &col, &row, width, height);
 
-#if 0
-    int y, cb, cr;
-    int y_off;
-    //figure out the y, cr, cb
-    y_off = 2 * col + (2 * row*width);
-    y = data[y_off];
-
-    if (col % 2 == 0) {
-      cb = data[y_off + 1];
-      cr = data[y_off + 3];
-    } else {
-      cb = data[y_off - 1];
-      cr = data[y_off + 1];
-    }
-
-    //convert to rgb
-    ycrcb2rgb(y, cb, cr, &r, &g, &b);
-#else
     //direct rgb
     guint32 * rgba = (guint32 *)GST_BUFFER_DATA (buf);
     guint32 pixel = rgba[col + row * width];
     r = (pixel >> 16) & 0xFF;
     g = (pixel >>  8) & 0xFF;
     b = (pixel >>  0) & 0xFF;
-    //r = data[y_off + 1];
-    //g = data[y_off + 2];
-    //b = data[y_off + 0];
-#endif
-    if (r != totalr) {
-      totalr = r;
-      if (i != 0)
-        color_change = TRUE;
-    }
-    if (g != totalg) {
-      totalg = g;
-      if (i != 0)
-        color_change = TRUE;
-    }
-    if (b != totalb) {
-      totalb = b;
-      if (i != 0)
-        color_change = TRUE;
+
+    if (i == 0) {
+      firstr = r;
+      firstg = g;
+      firstb = b;
+    } else if (r != firstr || g != firstg || b != firstb) {
+      color_change = TRUE;
     }
 
     /*
-    if (r != sr) {
-      sr = r;
-      printf("r = %d\n", r);
-    }
-    if (g != sg) {
-      sg = g;
-      printf("g = %d\n", g);
-    }
-    if (b != sb) {
-      sb = b;
-      printf("b = %d\n", b);
-    }
-    */
+       if (r != sr) {
+       sr = r;
+       printf("r = %d\n", r);
+       }
+       if (g != sg) {
+       sg = g;
+       printf("g = %d\n", g);
+       }
+       if (b != sb) {
+       sb = b;
+       printf("b = %d\n", b);
+       }
+       */
 
+    //thresholding to turn off leds
     if (r < BLACK_THRESH && g < BLACK_THRESH && b < BLACK_THRESH)
       r = g = b = 0;
 
     //the colors are weird in the led output
-    led_buffer[0 + i * 3] = gamma_map(g);
-    led_buffer[1 + i * 3] = gamma_map(r);
-    led_buffer[2 + i * 3] = gamma_map(b);
+    sink->led_buffer[0 + i * 3] = gamma_map(g);
+    sink->led_buffer[1 + i * 3] = gamma_map(r);
+    sink->led_buffer[2 + i * 3] = gamma_map(b);
   }
 
   //ditching blue screen
-  if (!color_change && totalr == 0 && totalg == 1 && totalb == 192)
-    memset(led_buffer, 0, 3 * num_leds);
+  if (!color_change && firstr == 0 && firstg == 1 && firstb == 192)
+    memset(sink->led_buffer, 0, 3 * num_leds);
 
-  led_write_buffer(led_buffer);
-#endif
+
+  led_write_buffer(sink->led_buffer);
 
   return GST_FLOW_OK;
 }
@@ -386,9 +350,6 @@ gst_led_wall_video_sink_getcaps (GstBaseSink * bsink) {
     return gst_caps_ref (xvimagesink->xcontext->caps);
     */
 
-//#ifndef TO_PGM
-//  printf("get caps\n");
-//#endif
 
   return gst_caps_copy (gst_pad_get_pad_template_caps (GST_VIDEO_SINK_PAD (ledwallvideosink)));
 }
@@ -403,9 +364,6 @@ gst_led_wall_video_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   gint width, height;
   ret = gst_structure_get_int (structure, "width", &width);
   ret &= gst_structure_get_int (structure, "height", &height);
-//#ifndef TO_PGM
-//  printf("width %d height %d\n", width, height);
-//#endif
 
   GST_VIDEO_SINK_WIDTH(ledwallvideosink) = width;
   GST_VIDEO_SINK_HEIGHT(ledwallvideosink) = height;
@@ -550,6 +508,71 @@ gst_led_wall_video_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   return TRUE;
 }
 
+static gboolean
+open_port (GstLedWallVideoSink *sink)
+{
+  int num_leds = sink->rows * sink->cols;
+  char *devices[] = { sink->device, "/dev/ttyUSB000", "/dev/ttyACM1", NULL };
+  char **device;
+
+  for (device = devices; *device != NULL; device++) {
+    if (led_open_output(*device, num_leds)) {
+      printf("opened %s\n", *device);
+      return TRUE;
+    }
+    printf("cannot open output %s\n", *device);
+  }
+
+  GST_ELEMENT_ERROR (sink, CORE, STATE_CHANGE, (NULL),
+      ("Failed to open output device %s", sink->device));
+  return FALSE;
+}
+
+static GstStateChangeReturn
+gst_led_wall_video_sink_change_state (GstElement * element, GstStateChange transition)
+{
+  GstLedWallVideoSink *sink = GST_LED_WALL_VIDEO_SINK (element);
+  GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+
+  switch (transition) {
+    case GST_STATE_CHANGE_NULL_TO_READY:
+      sink->rows = sink->requested_rows;
+      sink->cols = sink->requested_cols;
+
+      if (!open_port (sink))
+        goto error;
+      sink->led_buffer = g_malloc0 (3 * sink->cols * sink->rows);
+      break;
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+      break;
+    default:
+      break;
+  }
+
+  ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+
+  switch (transition) {
+    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_READY:
+      break;
+    case GST_STATE_CHANGE_READY_TO_NULL:
+      /* clean up object here */
+      g_free (sink->led_buffer);
+      sink->led_buffer = NULL;
+
+      led_close();
+      break;
+    default:
+      break;
+  }
+
+  return ret;
+error:
+  return GST_STATE_CHANGE_FAILURE;
+}
 
 static gboolean
 plugin_init (GstPlugin * plugin)
