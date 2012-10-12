@@ -253,6 +253,10 @@ gst_led_wall_video_sink_finalize (GObject * object)
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
+static int sr = 0;
+static int sg = 0;
+static int sb = 0;
+
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, GstBuffer * buf)
 {
@@ -320,6 +324,19 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
 
     if (r < BLACK_THRESH && g < BLACK_THRESH && b < BLACK_THRESH)
       r = g = b = 0;
+
+    if (r != sr) {
+      sr = r;
+      printf("r = %d", r);
+    }
+    if (g != sg) {
+      sg = g;
+      printf("g = %d", g);
+    }
+    if (b != sb) {
+      sb = b;
+      printf("b = %d", b);
+    }
 
     //the colors are weird in the led output
     led_buffer[0 + i * 3] = gamma_map(g);
