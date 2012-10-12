@@ -51,7 +51,6 @@ GST_DEBUG_CATEGORY_STATIC (gst_led_wall_video_sink_debug_category);
 #define led_columns (8 * 12)
 #define led_rows 64
 #define num_leds (led_columns * led_rows)
-static uint8_t led_buffer[num_leds * 3];
 
 /* prototypes */
 static void gst_led_wall_video_sink_set_property (GObject * object,
@@ -59,15 +58,12 @@ static void gst_led_wall_video_sink_set_property (GObject * object,
 static void gst_led_wall_video_sink_get_property (GObject * object,
     guint property_id, GValue * value, GParamSpec * pspec);
 
-static GObject *
-gst_led_wall_video_sink_construct(GType gtype,
-    guint n_properties,
-    GObjectConstructParam *properties);
 static void gst_led_wall_video_sink_dispose (GObject * object);
 static void gst_led_wall_video_sink_finalize (GObject * object);
 static gboolean gst_led_wall_video_sink_setcaps(GstBaseSink * bsink, GstCaps * caps);
 static GstCaps * gst_led_wall_video_sink_getcaps(GstBaseSink * bsink);
-
+static GstStateChangeReturn gst_led_wall_video_sink_change_state (GstElement * element,
+    GstStateChange transition);
 
 static GstFlowReturn gst_led_wall_video_sink_show_frame (GstBaseSink * bsink, GstBuffer * buf);
 
@@ -148,11 +144,11 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   //GstVideoSinkClass *video_sink_class = GST_VIDEO_SINK_CLASS (klass);
   GstBaseSinkClass *gstbasesink_class = (GstBaseSinkClass *) klass;
+  GstElementClass *gstelement_class = (GstElementClass *) klass;
 
   gobject_class->set_property = gst_led_wall_video_sink_set_property;
   gobject_class->get_property = gst_led_wall_video_sink_get_property;
 
-  gobject_class->constructor = gst_led_wall_video_sink_construct;
   gobject_class->dispose = gst_led_wall_video_sink_dispose;
   gobject_class->finalize = gst_led_wall_video_sink_finalize;
 
@@ -162,6 +158,8 @@ gst_led_wall_video_sink_class_init (GstLedWallVideoSinkClass * klass)
   gstbasesink_class->get_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_getcaps);
   gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_setcaps);
 
+  gstelement_class->change_state =
+      GST_DEBUG_FUNCPTR (gst_led_wall_video_sink_change_state);
 }
 
 static void
@@ -200,43 +198,11 @@ gst_led_wall_video_sink_get_property (GObject * object, guint property_id,
   }
 }
 
-static GObject *
-gst_led_wall_video_sink_construct(GType gtype,
-    guint n_properties,
-    GObjectConstructParam *properties) {
-  GObject *obj;
-  {
-    /* Always chain up to the parent constructor */
-    obj = G_OBJECT_CLASS (parent_class)->constructor (gtype, n_properties, properties);
-  }
-
-  /* update the object state depending on constructor properties */
-
-  //char * output_name = "/dev/ttyUSB000";
-  char * output_name = "/dev/ttyACM0";
-  if (!led_open_output(output_name, num_leds)) {
-    printf("cannot open output %s, trying ttyUSB000\n", output_name);
-    output_name = "/dev/ttyUSB000";
-    if (!led_open_output(output_name, num_leds)) {
-      output_name = "/dev/ttyACM1";
-      if (!led_open_output(output_name, num_leds)) {
-        printf("cannot open output %s\n", output_name);
-        exit (EXIT_FAILURE);
-      }
-    }
-  }
-  printf("opened %s\n", output_name);
-
-  return obj;
-}
-
 void
 gst_led_wall_video_sink_dispose (GObject * object)
 {
   /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
-
   /* clean up as possible.  may be called multiple times */
-
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
@@ -244,10 +210,6 @@ void
 gst_led_wall_video_sink_finalize (GObject * object)
 {
   /* GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (object); */
-
-  /* clean up object here */
-  led_close();
-
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
@@ -317,11 +279,11 @@ static GstFlowReturn gst_led_wall_video_sink_show_frame(GstBaseSink * bsink, Gst
 #endif
 
     //the colors are weird in the led output
-    led_buffer[0 + i * 3] = gamma_map(g);
-    led_buffer[1 + i * 3] = gamma_map(r);
-    led_buffer[2 + i * 3] = gamma_map(b);
+    ledwallvideosink->led_buffer[0 + i * 3] = gamma_map(g);
+    ledwallvideosink->led_buffer[1 + i * 3] = gamma_map(r);
+    ledwallvideosink->led_buffer[2 + i * 3] = gamma_map(b);
   }
-  led_write_buffer(led_buffer);
+  led_write_buffer(ledwallvideosink->led_buffer);
 #endif
 
   return GST_FLOW_OK;
@@ -500,6 +462,70 @@ gst_led_wall_video_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   return TRUE;
 }
 
+static gboolean
+open_port (GstLedWallVideoSink *wallsink)
+{
+  //char * output_name = "/dev/ttyUSB000";
+  char * output_name = "/dev/ttyACM0";
+  if (!led_open_output(output_name, num_leds)) {
+    printf("cannot open output %s, trying ttyUSB000\n", output_name);
+
+    output_name = "/dev/ttyUSB000";
+    if (!led_open_output(output_name, num_leds)) {
+      output_name = "/dev/ttyACM1";
+      if (!led_open_output(output_name, num_leds)) {
+        GST_ELEMENT_ERROR (wallsink, CORE, STATE_CHANGE, (NULL),
+            ("Failed to open output %s", output_name));
+        printf("cannot open output %s\n", output_name);
+        return FALSE;
+      }
+    }
+  }
+
+  printf("opened %s\n", output_name);
+  return TRUE;
+}
+
+static GstStateChangeReturn
+gst_led_wall_video_sink_change_state (GstElement * element, GstStateChange transition)
+{
+  GstLedWallVideoSink *ledwallvideosink = GST_LED_WALL_VIDEO_SINK (element);
+  GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+
+  switch (transition) {
+    case GST_STATE_CHANGE_NULL_TO_READY:
+      if (!open_port (ledwallvideosink))
+        goto error;
+      ledwallvideosink->led_buffer = g_malloc0 (3 * led_columns * led_rows);
+      break;
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+      break;
+    default:
+      break;
+  }
+
+  ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+
+  switch (transition) {
+    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_READY:
+      break;
+    case GST_STATE_CHANGE_READY_TO_NULL:
+      /* clean up object here */
+      g_free (ledwallvideosink->led_buffer);
+      led_close();
+      break;
+    default:
+      break;
+  }
+
+  return ret;
+error:
+  return GST_STATE_CHANGE_FAILURE;
+}
 
 static gboolean
 plugin_init (GstPlugin * plugin)

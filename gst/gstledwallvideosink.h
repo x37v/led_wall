@@ -38,6 +38,7 @@ struct _GstLedWallVideoSink
   GstVideoSink base_ledwallvideosink;
 
   GstPad *sinkpad;
+  guint8 *led_buffer;
 };
 
 struct _GstLedWallVideoSinkClass
