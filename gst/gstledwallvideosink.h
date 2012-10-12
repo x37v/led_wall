@@ -39,6 +39,14 @@ struct _GstLedWallVideoSink
 
   GstPad *sinkpad;
   guint8 *led_buffer;
+
+  gchar *device;
+
+  gint requested_rows;
+  gint requested_cols;
+
+  gint rows;
+  gint cols;
 };
 
 struct _GstLedWallVideoSinkClass
